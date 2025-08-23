@@ -8,7 +8,7 @@ const API = axios.create({
   },
 });
 
-export const registerUser = (formData) => API.post("/users/register", formData);
+export const registerUser = (formData) => API.post("/api/users/register", formData);
 //for login
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
