@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923001234567";
 
 const CheckoutPage = ({ cartItems, totalPrice }) => {

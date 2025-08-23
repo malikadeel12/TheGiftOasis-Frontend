@@ -6,7 +6,7 @@ const ProductCard = ({ product, addToCart }) => {
   const [flipped, setFlipped] = useState(false);
   const [imageClasses, setImageClasses] = useState({});
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
 
   // ✅ universal product id
   const productId = product.id || product._id;
