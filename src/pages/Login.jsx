@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import api from "../services/api"; // axios instance
+import jwtDecode from "jwt-decode";
+
+import api from "../services/api"; 
 
 const Login = () => {
   const navigate = useNavigate();
