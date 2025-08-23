@@ -25,7 +25,7 @@ export default function Shop({ addToCart }) { // ✅ addToCart prop
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/products", {
+      const res = await api.get("/products", {
         params: { search, category: selectedCategory, page, limit: 8 },
       });
       setProducts(res.data.products);

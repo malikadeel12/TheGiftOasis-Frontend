@@ -22,7 +22,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.post("/api/users/login", formData);
+      const res = await api.post("/users/login", formData);
       alert(res.data.message || "Login Successful!");
        const token = res.data.token;
        localStorage.setItem("token", token);

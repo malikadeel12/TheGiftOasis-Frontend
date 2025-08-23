@@ -21,7 +21,7 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await api.get("/api/admin/dashboard");
+      const res = await api.get("/admin/dashboard");
       setData(res.data.products || []);
     } catch (err) {
       console.error(err);
@@ -59,12 +59,12 @@ export default function AdminDashboard() {
 
     try {
       if (editingId) {
-        await api.put(`/api/admin/update-product/${editingId}`, formData, {
+        await api.put(`/admin/update-product/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product updated successfully!");
       } else {
-        await api.post("/api/admin/add-product", formData, {
+        await api.post("/admin/add-product", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product added successfully!");
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await api.delete(`/api/admin/delete-product/${id}`);
+      await api.delete(`/admin/delete-product/${id}`);
       setMessage("🗑 Product deleted successfully!");
       fetchProducts();
     } catch (err) {
