@@ -6,42 +6,41 @@ const ProductCard = ({ product, addToCart }) => {
   const [flipped, setFlipped] = useState(false);
   const [imageClasses, setImageClasses] = useState({});
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
 
-  // ✅ universal product id
-  const productId = product.id || product._id;
+  const productId = product._id || product.id;
 
-  // ✅ Handle image path
+  // ✅ Handle images
   const images =
     product?.images && product.images.length > 0
       ? product.images.map((img) =>
-        img.startsWith("http") ? img : `${apiBase}/${img.replace(/^\/+/, "")}`
-      )
+          img.startsWith("http")
+            ? img
+            : `${apiBase}/${img.replace(/^\/+/, "")}`
+        )
       : [
-        product?.imageUrl || product?.image
-          ? (product.imageUrl || product.image).startsWith("http")
-            ? product.imageUrl || product.image
-            : `${apiBase}/${(product.imageUrl || product.image).replace(/^\/+/, "")}`
-          : "https://via.placeholder.com/400x400.png?text=No+Image",
-      ];
+          product?.imageUrl || product?.image
+            ? (product.imageUrl || product.image).startsWith("http")
+              ? product.imageUrl || product.image
+              : `${apiBase}/${(product.imageUrl || product.image).replace(/^\/+/, "")}`
+            : "https://via.placeholder.com/400x400.png?text=No+Image",
+        ];
 
-  // ✅ Discount logic
-  const now = new Date();
-  const discountStart = product?.discountStart ? new Date(product.discountStart) : null;
-  const discountEnd = product?.discountEnd ? new Date(product.discountEnd) : null;
+  // ✅ Backend discount fields
+  const discountPercentage = Number(product?.discount || 0);
+  const isDiscountActive = Boolean(product?.isDiscountActive);
+  const discountExpiry = product?.discountExpiry
+    ? new Date(product.discountExpiry)
+    : null;
 
-  const isDiscountActive =
-    product?.discountPercentage > 0 &&
-    discountStart &&
-    discountEnd &&
-    now >= discountStart &&
-    now <= discountEnd;
+  const showExpiry =
+    isDiscountActive && discountExpiry && discountExpiry > new Date();
 
   const finalPrice = isDiscountActive
-    ? product.price - (product.price * product.discountPercentage) / 100
+    ? product.price - (product.price * discountPercentage) / 100
     : product.price;
 
-  // ✅ Orientation check
   const handleImageLoad = (e, idx) => {
     const img = e.target;
     const isLandscape = img.naturalWidth > img.naturalHeight;
@@ -64,7 +63,7 @@ const ProductCard = ({ product, addToCart }) => {
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >
-        {/* FRONT SIDE */}
+        {/* FRONT */}
         <div
           className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/20 backdrop-blur-lg border border-white/40 flex items-center justify-center"
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
@@ -82,8 +81,8 @@ const ProductCard = ({ product, addToCart }) => {
                     className={`w-full h-full ${imageClasses[idx] || "object-cover"}`}
                     onLoad={(e) => handleImageLoad(e, idx)}
                     onError={(e) =>
-                    (e.target.src =
-                      "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
+                      (e.target.src =
+                        "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
                     }
                   />
                 </div>
@@ -97,8 +96,8 @@ const ProductCard = ({ product, addToCart }) => {
                 className={`w-full h-full ${imageClasses[0] || "object-cover"}`}
                 onLoad={(e) => handleImageLoad(e, 0)}
                 onError={(e) =>
-                (e.target.src =
-                  "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
+                  (e.target.src =
+                    "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
                 }
               />
             </div>
@@ -106,12 +105,12 @@ const ProductCard = ({ product, addToCart }) => {
 
           {isDiscountActive && (
             <span className="absolute top-3 right-3 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs px-3 py-1 rounded-full shadow-md">
-              -{product.discountPercentage}%
+              -{discountPercentage}%
             </span>
           )}
         </div>
 
-        {/* BACK SIDE */}
+        {/* BACK */}
         <div
           className="absolute w-full h-full rounded-2xl shadow-2xl bg-gradient-to-br from-white/60 to-gray-100/60 backdrop-blur-lg border border-white/40 p-5 flex flex-col justify-between"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
@@ -138,7 +137,7 @@ const ProductCard = ({ product, addToCart }) => {
             </div>
           </div>
 
-          {/* Price */}
+          {/* Price Section */}
           <div className="mt-4 flex items-center justify-between bg-white/80 px-3 py-2 rounded-xl shadow-inner">
             <div>
               {isDiscountActive ? (
@@ -160,19 +159,19 @@ const ProductCard = ({ product, addToCart }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const id = product._id || product.id;
-                addToCart({ ...product, _id: id });
+                addToCart({ ...product, _id: productId });
               }}
             >
               <ShoppingCart size={18} className="inline mr-1" /> Add
             </button>
-
           </div>
 
-          {isDiscountActive && discountEnd && (
+          {/* Discount Expiry */}
+          {showExpiry && (
             <div className="mt-3 text-center">
               <span className="inline-block bg-red-100 text-red-600 text-xs font-medium px-3 py-1 rounded-full">
-                Deal ends: {discountEnd.toLocaleString()}
+                Deal ends:{" "}
+                {discountExpiry.toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}
               </span>
             </div>
           )}

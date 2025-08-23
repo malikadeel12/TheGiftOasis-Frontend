@@ -4,27 +4,31 @@ import api from "../services/api";
 
 export default function AdminDashboard() {
   const [data, setData] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    image: null,
-    discountPercentage: 0,
-    discountStart: "",
-    discountEnd: "",
-  });
+  const [form, setForm] = useState(initialForm());
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  function initialForm() {
+    return {
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      image: null,
+      discountPercentage: "",
+      discountStart: "",
+      discountEnd: "",
+    };
+  }
 
   const fetchProducts = async () => {
     try {
       const res = await api.get("/admin/dashboard");
       setData(res.data.products || []);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Fetch error:", err);
       setData([]);
     }
   };
@@ -36,10 +40,25 @@ export default function AdminDashboard() {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "image") {
-      setForm({ ...form, image: files[0] });
+      setForm({ ...form, image: files?.[0] || null });
     } else {
       setForm({ ...form, [name]: value });
     }
+  };
+
+  const resetForm = () => {
+    setForm(initialForm());
+    setEditingId(null);
+    setIsModalOpen(false);
+    setMessage("");
+  };
+
+  const formatDateForInput = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
   };
 
   const handleSubmit = async (e) => {
@@ -48,14 +67,16 @@ export default function AdminDashboard() {
     setMessage("");
 
     const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("description", form.description);
-    formData.append("price", form.price);
-    formData.append("category", form.category);
-    formData.append("discountPercentage", form.discountPercentage || 0);
-    formData.append("discountStart", form.discountStart || "");
-    formData.append("discountEnd", form.discountEnd || "");
-    if (form.image) formData.append("image", form.image);
+    Object.entries(form).forEach(([key, value]) => {
+      if (value !== null && value !== "" && value !== undefined) {
+        // ✅ Convert discountStart & discountEnd to ISO string
+        if (key === "discountStart" || key === "discountEnd") {
+          formData.append(key, new Date(value).toISOString());
+        } else {
+          formData.append(key, value);
+        }
+      }
+    });
 
     try {
       if (editingId) {
@@ -69,18 +90,7 @@ export default function AdminDashboard() {
         });
         setMessage("✅ Product added successfully!");
       }
-      setForm({
-        name: "",
-        description: "",
-        price: "",
-        category: "",
-        image: null,
-        discountPercentage: 0,
-        discountStart: "",
-        discountEnd: "",
-      });
-      setEditingId(null);
-      setIsModalOpen(false);
+      resetForm();
       fetchProducts();
     } catch (err) {
       setMessage(`❌ ${err.response?.data?.message || "Error saving product"}`);
@@ -90,18 +100,14 @@ export default function AdminDashboard() {
 
   const handleEdit = (product) => {
     setForm({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category: product.category,
+      name: product.name || "",
+      description: product.description || "",
+      price: product.price || "",
+      category: product.category || "",
       image: null,
-      discountPercentage: product.discountPercentage || 0,
-      discountStart: product.discountStart
-        ? new Date(product.discountStart).toISOString().slice(0, 16)
-        : "",
-      discountEnd: product.discountEnd
-        ? new Date(product.discountEnd).toISOString().slice(0, 16)
-        : "",
+      discountPercentage: product.discount || "",
+      discountStart: formatDateForInput(product.discountStart),
+      discountEnd: formatDateForInput(product.discountEnd),
     });
     setEditingId(product._id);
     setIsModalOpen(true);
@@ -118,17 +124,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const isDiscountActive = (product) => {
-    const now = new Date();
-    return (
-      product.discountPercentage > 0 &&
-      product.discountStart &&
-      product.discountEnd &&
-      new Date(product.discountStart) <= now &&
-      new Date(product.discountEnd) >= now
-    );
-  };
-
   return (
     <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-pink-100 to-pink-50">
       <div className="max-w-6xl mx-auto">
@@ -141,16 +136,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => {
               setEditingId(null);
-              setForm({
-                name: "",
-                description: "",
-                price: "",
-                category: "",
-                image: null,
-                discountPercentage: 0,
-                discountStart: "",
-                discountEnd: "",
-              });
+              setForm(initialForm());
               setIsModalOpen(true);
             }}
             className="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md"
@@ -159,20 +145,17 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* All Products */}
+        {/* Products Grid */}
         {data.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {data.map((product) => {
-              const finalPrice = isDiscountActive(product)
-                ? product.price -
-                (product.price * product.discountPercentage) / 100
-                : product.price;
+              const finalPrice =
+                product.isDiscountActive && product.discount > 0
+                  ? product.price - (product.price * product.discount) / 100
+                  : product.price;
 
               return (
-                <div
-                  key={product._id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden"
-                >
+                <div key={product._id} className="bg-white rounded-xl shadow-md overflow-hidden">
                   <img
                     src={product.imageUrl || "https://via.placeholder.com/300"}
                     alt={product.name}
@@ -181,27 +164,30 @@ export default function AdminDashboard() {
                   <div className="p-4">
                     <h3 className="text-lg font-bold text-pink-700">{product.name}</h3>
                     <p className="text-gray-600 text-sm mb-2">{product.description}</p>
-                    {isDiscountActive(product) ? (
+
+                    {product.isDiscountActive && product.discount > 0 ? (
                       <>
-                        <p className="text-gray-500 line-through">
-                          ₨ {product.price}
-                        </p>
+                        <p className="text-gray-500 line-through">₨ {product.price}</p>
                         <p className="text-pink-500 font-semibold">
                           ₨ {finalPrice.toFixed(2)}{" "}
                           <span className="text-xs text-green-600">
-                            ({product.discountPercentage}% OFF)
+                            ({product.discount}% OFF)
                           </span>
                         </p>
-                        <span className="text-xs text-red-500 block mb-2">
-                          Deal ends: {new Date(product.discountEnd).toLocaleString()}
-                        </span>
+                        {product.discountExpiry && (
+                          <span className="text-xs text-red-500 block mb-2">
+                            Deal ends: {new Date(product.discountExpiry).toLocaleString()}
+                          </span>
+                        )}
                       </>
                     ) : (
                       <p className="text-pink-500 font-semibold">₨ {product.price}</p>
                     )}
+
                     <span className="text-xs text-gray-500 block mb-3">
                       Category: {product.category}
                     </span>
+
                     <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => handleEdit(product)}
@@ -226,7 +212,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 px-4">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8">
@@ -235,6 +221,7 @@ export default function AdminDashboard() {
             </h2>
 
             <form onSubmit={handleSubmit}>
+              {/* Name, Description, Price, Category, Image */}
               <input
                 type="text"
                 name="name"
@@ -270,7 +257,6 @@ export default function AdminDashboard() {
                 className="border border-pink-300 rounded-lg w-full p-3 mb-4"
                 required
               />
-
               <datalist id="categories">
                 <option value="Polaroids" />
                 <option value="Frames" />
@@ -278,9 +264,8 @@ export default function AdminDashboard() {
                 <option value="Acrylic Boxies" />
                 <option value="Eid Collection" />
                 <option value="Gift Boxes" />
-                <option value="Bouqets" />
+                <option value="Bouquets" />
               </datalist>
-
               <input
                 type="file"
                 name="image"
@@ -315,23 +300,18 @@ export default function AdminDashboard() {
                 className="border border-pink-300 rounded-lg w-full p-3 mb-4"
               />
 
+              {/* Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg"
                 >
-                  {loading
-                    ? editingId
-                      ? "Updating..."
-                      : "Adding..."
-                    : editingId
-                      ? "Update Product"
-                      : "Add Product"}
+                  {loading ? (editingId ? "Updating..." : "Adding...") : editingId ? "Update Product" : "Add Product"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={resetForm}
                   className="flex-1 bg-gray-300 hover:bg-gray-400 text-black px-6 py-3 rounded-lg"
                 >
                   Cancel
@@ -340,19 +320,13 @@ export default function AdminDashboard() {
             </form>
 
             {message && (
-              <p
-                className={`mt-4 text-center font-medium ${message.includes("✅") || message.includes("🗑")
-                    ? "text-green-600"
-                    : "text-red-500"
-                  }`}
-              >
+              <p className={`mt-4 text-center font-medium ${message.includes("✅") || message.includes("🗑") ? "text-green-600" : "text-red-500"}`}>
                 {message}
               </p>
             )}
           </div>
         </div>
       )}
-
     </div>
   );
 }
