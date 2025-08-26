@@ -4,7 +4,7 @@ import api from "../services/api";
 import ProductCard from "../components/ProductCard";
 import { Search } from "lucide-react";
 
-export default function Shop({ addToCart }) { // ✅ addToCart prop
+export default function Shop({ addToCart }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
@@ -14,7 +14,7 @@ export default function Shop({ addToCart }) { // ✅ addToCart prop
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Debounce search input
+  // fetch products
   useEffect(() => {
     const delay = setTimeout(() => {
       fetchProducts();
@@ -25,7 +25,7 @@ export default function Shop({ addToCart }) { // ✅ addToCart prop
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/products", {
+      const res = await api.get("/product", {
         params: { search, category: selectedCategory, page, limit: 8 },
       });
       setProducts(res.data.products);
@@ -116,11 +116,7 @@ export default function Shop({ addToCart }) { // ✅ addToCart prop
         ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                addToCart={addToCart} // ✅ important
-              />
+              <ProductCard key={product._id} product={product} addToCart={addToCart} />
             ))}
           </div>
         )}

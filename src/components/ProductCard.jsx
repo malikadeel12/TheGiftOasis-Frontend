@@ -11,23 +11,18 @@ const ProductCard = ({ product, addToCart }) => {
 
   const productId = product._id || product.id;
 
-  // ✅ Handle images
-  const images =
-    product?.images && product.images.length > 0
-      ? product.images.map((img) =>
-          img.startsWith("http")
-            ? img
-            : `${apiBase}/${img.replace(/^\/+/, "")}`
-        )
-      : [
-          product?.imageUrl || product?.image
-            ? (product.imageUrl || product.image).startsWith("http")
-              ? product.imageUrl || product.image
-              : `${apiBase}/${(product.imageUrl || product.image).replace(/^\/+/, "")}`
-            : "https://via.placeholder.com/400x400.png?text=No+Image",
-        ];
+  // fallback image
+  const fallbackImage =
+    "https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?cs=srgb&dl=pexels-souvenirpixels-414612.jpg&fm=jpg";
 
-  // ✅ Backend discount fields
+  // resolve image url
+  const imageUrl = (() => {
+    if (!product?.imageUrl) return fallbackImage;
+    if (/^https?:\/\//i.test(product.imageUrl)) return product.imageUrl;
+    return `${apiBase.replace(/\/$/, "")}/${product.imageUrl.replace(/^\//, "")}`;
+  })();
+
+  // backend fields
   const discountPercentage = Number(product?.discount || 0);
   const isDiscountActive = Boolean(product?.isDiscountActive);
   const discountExpiry = product?.discountExpiry
@@ -37,9 +32,7 @@ const ProductCard = ({ product, addToCart }) => {
   const showExpiry =
     isDiscountActive && discountExpiry && discountExpiry > new Date();
 
-  const finalPrice = isDiscountActive
-    ? product.price - (product.price * discountPercentage) / 100
-    : product.price;
+  const finalPrice = product?.finalPrice ?? product?.price;
 
   const handleImageLoad = (e, idx) => {
     const img = e.target;
@@ -68,40 +61,18 @@ const ProductCard = ({ product, addToCart }) => {
           className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/20 backdrop-blur-lg border border-white/40 flex items-center justify-center"
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
         >
-          {images.length > 1 ? (
-            <div className="w-full h-full flex overflow-x-auto snap-x snap-mandatory">
-              {images.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="w-full h-full flex-shrink-0 snap-center bg-gray-100"
-                >
-                  <img
-                    src={img}
-                    alt={`${product?.name}-${idx}`}
-                    className={`w-full h-full ${imageClasses[idx] || "object-cover"}`}
-                    onLoad={(e) => handleImageLoad(e, idx)}
-                    onError={(e) =>
-                      (e.target.src =
-                        "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full h-full bg-gray-100">
-              <img
-                src={images[0]}
-                alt={product?.name}
-                className={`w-full h-full ${imageClasses[0] || "object-cover"}`}
-                onLoad={(e) => handleImageLoad(e, 0)}
-                onError={(e) =>
-                  (e.target.src =
-                    "https://via.placeholder.com/400x400.png?text=Image+Not+Found")
-                }
-              />
-            </div>
-          )}
+          <div className="w-full h-full bg-gray-100">
+            <img
+              src={imageUrl}
+              alt={product?.name}
+              className={`w-full h-full ${imageClasses[0] || "object-cover"}`}
+              onLoad={(e) => handleImageLoad(e, 0)}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = fallbackImage;
+              }}
+            />
+          </div>
 
           {isDiscountActive && (
             <span className="absolute top-3 right-3 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs px-3 py-1 rounded-full shadow-md">
@@ -161,8 +132,9 @@ const ProductCard = ({ product, addToCart }) => {
                 e.stopPropagation();
                 addToCart({ ...product, _id: productId });
               }}
+              className="flex items-center gap-1 bg-pink-500 hover:bg-pink-600 text-white text-sm px-3 py-1 rounded-lg shadow"
             >
-              <ShoppingCart size={18} className="inline mr-1" /> Add
+              <ShoppingCart size={16} /> Add
             </button>
           </div>
 
@@ -171,7 +143,9 @@ const ProductCard = ({ product, addToCart }) => {
             <div className="mt-3 text-center">
               <span className="inline-block bg-red-100 text-red-600 text-xs font-medium px-3 py-1 rounded-full">
                 Deal ends:{" "}
-                {discountExpiry.toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}
+                {discountExpiry.toLocaleString("en-PK", {
+                  timeZone: "Asia/Karachi",
+                })}
               </span>
             </div>
           )}
