@@ -65,12 +65,6 @@ export default function AdminDashboard() {
     setLoading(true);
     setMessage("");
 
-
-    console.log("📝 Admin Discount Input:");
-  console.log("Discount %:", form.discountPercentage);
-  console.log("Discount Start:", form.discountStart);
-  console.log("Discount End:", form.discountEnd);
-
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
       if (value !== null && value !== "" && value !== undefined) {
@@ -181,9 +175,10 @@ export default function AdminDashboard() {
                         {product.discountExpiry && (
                           <span className="text-xs text-red-500 block mb-2">
                             Deal ends:{" "}
-                            {moment(product.discountExpiry)
+                            {moment.utc(product.discountExpiry)
                               .tz("Asia/Karachi")
                               .format("YYYY-MM-DD hh:mm A")}
+
                           </span>
                         )}
                       </>
@@ -319,8 +314,8 @@ export default function AdminDashboard() {
                       ? "Updating..."
                       : "Adding..."
                     : editingId
-                    ? "Update Product"
-                    : "Add Product"}
+                      ? "Update Product"
+                      : "Add Product"}
                 </button>
                 <button
                   type="button"
@@ -334,11 +329,10 @@ export default function AdminDashboard() {
 
             {message && (
               <p
-                className={`mt-4 text-center font-medium ${
-                  message.includes("✅") || message.includes("🗑")
+                className={`mt-4 text-center font-medium ${message.includes("✅") || message.includes("🗑")
                     ? "text-green-600"
                     : "text-red-500"
-                }`}
+                  }`}
               >
                 {message}
               </p>

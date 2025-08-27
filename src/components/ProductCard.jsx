@@ -1,6 +1,7 @@
 // src/components/ProductCard.jsx
 import React, { useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import moment from "moment-timezone";
 
 const ProductCard = ({ product, addToCart }) => {
   const [flipped, setFlipped] = useState(false);
@@ -143,15 +144,7 @@ const ProductCard = ({ product, addToCart }) => {
             <div className="mt-3 text-center">
               <span className="inline-block bg-red-100 text-red-600 text-xs font-medium px-3 py-1 rounded-full">
                 Deal ends:{" "}
-                {discountExpiry.toLocaleString("en-PK", {
-                  timeZone: "Asia/Karachi",
-                  hour12: true, 
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {moment.utc(discountExpiry).tz("Asia/Karachi").format("YYYY-MM-DD hh:mm A")}
               </span>
             </div>
           )}

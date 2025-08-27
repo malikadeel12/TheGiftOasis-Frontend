@@ -42,21 +42,21 @@ const CheckoutPage = ({ cartItems, totalPrice }) => {
       const orderText =
         cartItems.length > 0
           ? cartItems
-              .map(
-                (item) =>
-                  `${item.name} x ${item.quantity} = Rs.${(
-                    item.price * item.quantity
-                  ).toFixed(2)}`
-              )
-              .join("\n")
+            .map(
+              (item) =>
+                `${item.name} x ${item.quantity} = Rs.${(
+                  item.price * item.quantity
+                ).toFixed(2)}`
+            )
+            .join("\n")
           : "No items";
 
       // 3) Payment account numbers (display in message too)
       const accounts = {
-        jazzcash: "0300-1234567 (Title: Your Name)",
-        easypaisa: "0311-9876543 (Title: Your Name)",
-        bank: "PK12-ABCD-1234567890 (Meezan Bank)",
+        easypaisa: "03255313675 (Title: KHANSA FAHEEM)",
+        bank: "08240111941210 (Meezan Bank, IBAN: PK32MEZN0008240111941210)",
       };
+
 
       // 4) WhatsApp text
       const message = `
@@ -73,11 +73,10 @@ const CheckoutPage = ({ cartItems, totalPrice }) => {
 ${orderText}
 
 💵 Total: Rs.${totalPrice.toFixed(2)}
-${
-  screenshotUrl
-    ? `\n📷 Payment Screenshot:\n${screenshotUrl}\n`
-    : "\n📷 Payment Screenshot: (not uploaded)\n"
-}
+${screenshotUrl
+          ? `\n📷 Payment Screenshot:\n${screenshotUrl}\n`
+          : "\n📷 Payment Screenshot: (not uploaded)\n"
+        }
 *Note:* Please confirm receipt and process the order.
       `.trim();
 
