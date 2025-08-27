@@ -1,11 +1,12 @@
 // src/components/ProductCard.jsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ShoppingCart } from "lucide-react";
 import moment from "moment-timezone";
 
 const ProductCard = ({ product, addToCart }) => {
   const [flipped, setFlipped] = useState(false);
-  const [imageClasses, setImageClasses] = useState({});
+  const [imageVisible, setImageVisible] = useState(false);
+  const imageRef = useRef(null);
 
   const apiBase =
     import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
@@ -26,23 +27,24 @@ const ProductCard = ({ product, addToCart }) => {
   // backend fields
   const discountPercentage = Number(product?.discountPercentage || 0);
   const isDiscountActive = Boolean(product?.isDiscountActive);
-  const discountExpiry = product?.discountExpiry
-    ? new Date(product.discountExpiry)
-    : null;
-
-  const showExpiry =
-    isDiscountActive && discountExpiry && discountExpiry > new Date();
-
+  const discountExpiry = product?.discountExpiry ? new Date(product.discountExpiry) : null;
+  const showExpiry = isDiscountActive && discountExpiry && discountExpiry > new Date();
   const finalPrice = product?.finalPrice ?? product?.price;
 
-  const handleImageLoad = (e, idx) => {
-    const img = e.target;
-    const isLandscape = img.naturalWidth > img.naturalHeight;
-    setImageClasses((prev) => ({
-      ...prev,
-      [idx]: isLandscape ? "object-contain" : "object-cover",
-    }));
-  };
+  // Lazy load images using IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImageVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (imageRef.current) observer.observe(imageRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -62,17 +64,18 @@ const ProductCard = ({ product, addToCart }) => {
           className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/20 backdrop-blur-lg border border-white/40 flex items-center justify-center"
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
         >
-          <div className="w-full h-full bg-gray-100">
-            <img
-              src={imageUrl}
-              alt={product?.name}
-              className={`w-full h-full ${imageClasses[0] || "object-cover"}`}
-              onLoad={(e) => handleImageLoad(e, 0)}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = fallbackImage;
-              }}
-            />
+          <div className="w-full h-full bg-gray-100" ref={imageRef}>
+            {imageVisible && (
+              <img
+                src={imageUrl}
+                alt={product?.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = fallbackImage;
+                }}
+              />
+            )}
           </div>
 
           {isDiscountActive && (

@@ -1,5 +1,5 @@
 // src/pages/Shop.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
 import { Search } from "lucide-react";
@@ -14,12 +14,15 @@ export default function Shop({ addToCart }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // fetch products
+  const searchRef = useRef(null);
+
+  // Debounced search
   useEffect(() => {
-    const delay = setTimeout(() => {
+    if (searchRef.current) clearTimeout(searchRef.current);
+    searchRef.current = setTimeout(() => {
       fetchProducts();
     }, 500);
-    return () => clearTimeout(delay);
+    return () => clearTimeout(searchRef.current);
   }, [search, selectedCategory, page]);
 
   const fetchProducts = async () => {
@@ -28,8 +31,8 @@ export default function Shop({ addToCart }) {
       const res = await api.get("/admin", {
         params: { search, category: selectedCategory, page, limit: 8 },
       });
-      setProducts(res.data.products);
-      setTotalPages(res.data.totalPages);
+      setProducts(res.data.products || []);
+      setTotalPages(res.data.totalPages || 1);
       setCategories(res.data.categories || []);
       setError("");
     } catch (err) {
@@ -108,7 +111,18 @@ export default function Shop({ addToCart }) {
 
         {/* Products */}
         {loading ? (
-          <p className="text-center text-pink-500 animate-pulse">Loading products...</p>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {Array(8)
+              .fill(0)
+              .map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse bg-white/90 rounded-2xl shadow-lg p-5 h-96 flex items-center justify-center"
+                >
+                  <div className="w-full h-full bg-gray-200 rounded-xl" />
+                </div>
+              ))}
+          </div>
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
         ) : products.length === 0 ? (
@@ -116,7 +130,11 @@ export default function Shop({ addToCart }) {
         ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} addToCart={addToCart} />
+              <ProductCard
+                key={product._id}
+                product={product}
+                addToCart={addToCart}
+              />
             ))}
           </div>
         )}
