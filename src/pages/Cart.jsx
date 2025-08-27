@@ -1,39 +1,15 @@
 // src/pages/Cart.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";  // 👈 navigate hook import
 
-const CartPage = () => {
-  const navigate = useNavigate();
-
-  // ✅ Load cart from localStorage
-  const [cartItems, setCartItems] = useState(() => {
-    const saved = localStorage.getItem("cartItems");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // ✅ Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-  }, [cartItems]);
+const CartPage = ({ cartItems, removeFromCart, updateQuantity }) => {
+  const navigate = useNavigate(); // 👈 hook use kiya
 
   // 💰 Calculate total
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-
-  const removeFromCart = (id) => {
-    const updated = cartItems.filter((item) => item._id !== id && item.id !== id);
-    setCartItems(updated);
-  };
-
-  const updateQuantity = (id, qty) => {
-    if (qty < 1) return; // minimum 1
-    const updated = cartItems.map((item) =>
-      item._id === id || item.id === id ? { ...item, quantity: qty } : item
-    );
-    setCartItems(updated);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 p-6">
@@ -122,7 +98,7 @@ const CartPage = () => {
       {/* Checkout Button */}
       <div className="mt-8 max-w-3xl mx-auto">
         <button
-          onClick={() => navigate("/checkout")}
+          onClick={() => navigate("/checkout")} // 👈 navigate to checkout
           className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold text-lg rounded-2xl shadow-md hover:from-pink-600 hover:to-rose-500 transition transform hover:scale-[1.02]"
         >
           ✅ Proceed to Checkout
