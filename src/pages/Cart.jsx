@@ -1,39 +1,15 @@
 // src/pages/Cart.jsx
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const CartPage = () => {
+const Cart = ({ cartItems, removeFromCart, updateQuantity }) => {
   const navigate = useNavigate();
 
-  // ✅ Load cart from localStorage
-  const [cartItems, setCartItems] = useState(() => {
-    const saved = localStorage.getItem("cartItems");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // ✅ Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  // 💰 Calculate total
+  // Calculate total
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-
-  const removeFromCart = (id) => {
-    const updated = cartItems.filter((item) => item._id !== id && item.id !== id);
-    setCartItems(updated);
-  };
-
-  const updateQuantity = (id, qty) => {
-    if (qty < 1) return; // minimum 1
-    const updated = cartItems.map((item) =>
-      item._id === id || item.id === id ? { ...item, quantity: qty } : item
-    );
-    setCartItems(updated);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 p-6">
@@ -132,4 +108,4 @@ const CartPage = () => {
   );
 };
 
-export default CartPage;
+export default Cart;

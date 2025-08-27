@@ -131,19 +131,6 @@ ${screenshotUrl
             Payment Method
           </h2>
           <div className="space-y-3">
-            <label className="block p-3 border rounded-xl cursor-pointer hover:bg-pink-50">
-              <input
-                type="radio"
-                name="payment"
-                value="jazzcash"
-                checked={paymentMethod === "jazzcash"}
-                onChange={() => setPaymentMethod("jazzcash")}
-              />{" "}
-              <span className="font-semibold">JazzCash</span> –{" "}
-              <span className="text-green-700 ml-1">
-                0300-1234567 (Title: Your Name)
-              </span>
-            </label>
 
             <label className="block p-3 border rounded-xl cursor-pointer hover:bg-pink-50">
               <input
@@ -155,7 +142,7 @@ ${screenshotUrl
               />{" "}
               <span className="font-semibold">Easypaisa</span> –{" "}
               <span className="text-green-700 ml-1">
-                0311-9876543 (Title: Your Name)
+                03255313675  (Title: KHANSA FAHEEM)
               </span>
             </label>
 
@@ -168,9 +155,18 @@ ${screenshotUrl
                 onChange={() => setPaymentMethod("bank")}
               />{" "}
               <span className="font-semibold">Bank Transfer</span> –{" "}
-              <span className="text-green-700 ml-1">
-                PK12-ABCD-1234567890 (Meezan Bank)
-              </span>
+              <div className="text-green-700 space-y-1">
+                <div>
+                  <span className="font-semibold">Account Number:</span> 08240111941210
+                </div>
+                <div>
+                  <span className="font-semibold">IBAN:</span> PK32MEZN0008240111941210
+                </div>
+                <div>
+                  (Meezan Bank)
+                </div>
+              </div>
+
             </label>
           </div>
 
