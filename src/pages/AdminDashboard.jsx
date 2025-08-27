@@ -1,6 +1,7 @@
 // src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import moment from "moment-timezone";
 
 export default function AdminDashboard() {
   const [data, setData] = useState([]);
@@ -53,12 +54,10 @@ export default function AdminDashboard() {
     setMessage("");
   };
 
+  // ✅ Updated: Use moment.tz to format for datetime-local input in Asia/Karachi
   const formatDateForInput = (dateStr) => {
     if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60000);
-    return localDate.toISOString().slice(0, 16);
+    return moment.tz(dateStr, "Asia/Karachi").format("YYYY-MM-DDTHH:mm");
   };
 
   const handleSubmit = async (e) => {
@@ -66,12 +65,18 @@ export default function AdminDashboard() {
     setLoading(true);
     setMessage("");
 
+
+    console.log("📝 Admin Discount Input:");
+  console.log("Discount %:", form.discountPercentage);
+  console.log("Discount Start:", form.discountStart);
+  console.log("Discount End:", form.discountEnd);
+
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
       if (value !== null && value !== "" && value !== undefined) {
-        // ✅ Convert discountStart & discountEnd to ISO string
+        // ✅ Send raw value to backend; backend will handle PKT conversion
         if (key === "discountStart" || key === "discountEnd") {
-          formData.append(key, new Date(value).toISOString());
+          formData.append(key, value);
         } else {
           formData.append(key, value);
         }
@@ -80,12 +85,12 @@ export default function AdminDashboard() {
 
     try {
       if (editingId) {
-        await api.put(`/admin/update-product/${editingId}`, formData, {
+        const res = await api.put(`/admin/update-product/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product updated successfully!");
       } else {
-        await api.post("/admin/add-product", formData, {
+        const res = await api.post("/admin/add-product", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product added successfully!");
@@ -93,6 +98,7 @@ export default function AdminDashboard() {
       resetForm();
       fetchProducts();
     } catch (err) {
+      console.error("❌ Submit error:", err.response || err.message);
       setMessage(`❌ ${err.response?.data?.message || "Error saving product"}`);
     }
     setLoading(false);
@@ -105,7 +111,7 @@ export default function AdminDashboard() {
       price: product.price || "",
       category: product.category || "",
       image: null,
-      discountPercentage: product.discount || "",
+      discountPercentage: product.discountPercentage || "",
       discountStart: formatDateForInput(product.discountStart),
       discountEnd: formatDateForInput(product.discountEnd),
     });
@@ -116,7 +122,7 @@ export default function AdminDashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await api.delete(`/admin/delete-product/${id}`);
+      const res = await api.delete(`/admin/delete-product/${id}`);
       setMessage("🗑 Product deleted successfully!");
       fetchProducts();
     } catch (err) {
@@ -131,7 +137,6 @@ export default function AdminDashboard() {
           Admin Dashboard
         </h1>
 
-        {/* Add Product Button */}
         <div className="text-center mb-8">
           <button
             onClick={() => {
@@ -145,13 +150,12 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Products Grid */}
         {data.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {data.map((product) => {
               const finalPrice =
-                product.isDiscountActive && product.discount > 0
-                  ? product.price - (product.price * product.discount) / 100
+                product.isDiscountActive && product.discountPercentage > 0
+                  ? product.price - (product.price * product.discountPercentage) / 100
                   : product.price;
 
               return (
@@ -165,18 +169,21 @@ export default function AdminDashboard() {
                     <h3 className="text-lg font-bold text-pink-700">{product.name}</h3>
                     <p className="text-gray-600 text-sm mb-2">{product.description}</p>
 
-                    {product.isDiscountActive && product.discount > 0 ? (
+                    {product.isDiscountActive && product.discountPercentage > 0 ? (
                       <>
                         <p className="text-gray-500 line-through">₨ {product.price}</p>
                         <p className="text-pink-500 font-semibold">
                           ₨ {finalPrice.toFixed(2)}{" "}
                           <span className="text-xs text-green-600">
-                            ({product.discount}% OFF)
+                            ({product.discountPercentage}% OFF)
                           </span>
                         </p>
                         {product.discountExpiry && (
                           <span className="text-xs text-red-500 block mb-2">
-                            Deal ends: {new Date(product.discountExpiry).toLocaleString()}
+                            Deal ends:{" "}
+                            {moment(product.discountExpiry)
+                              .tz("Asia/Karachi")
+                              .format("YYYY-MM-DD hh:mm A")}
                           </span>
                         )}
                       </>
@@ -307,7 +314,13 @@ export default function AdminDashboard() {
                   disabled={loading}
                   className="flex-1 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg"
                 >
-                  {loading ? (editingId ? "Updating..." : "Adding...") : editingId ? "Update Product" : "Add Product"}
+                  {loading
+                    ? editingId
+                      ? "Updating..."
+                      : "Adding..."
+                    : editingId
+                    ? "Update Product"
+                    : "Add Product"}
                 </button>
                 <button
                   type="button"
@@ -320,7 +333,13 @@ export default function AdminDashboard() {
             </form>
 
             {message && (
-              <p className={`mt-4 text-center font-medium ${message.includes("✅") || message.includes("🗑") ? "text-green-600" : "text-red-500"}`}>
+              <p
+                className={`mt-4 text-center font-medium ${
+                  message.includes("✅") || message.includes("🗑")
+                    ? "text-green-600"
+                    : "text-red-500"
+                }`}
+              >
                 {message}
               </p>
             )}

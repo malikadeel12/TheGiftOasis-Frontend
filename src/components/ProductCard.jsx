@@ -23,7 +23,7 @@ const ProductCard = ({ product, addToCart }) => {
   })();
 
   // backend fields
-  const discountPercentage = Number(product?.discount || 0);
+  const discountPercentage = Number(product?.discountPercentage || 0);
   const isDiscountActive = Boolean(product?.isDiscountActive);
   const discountExpiry = product?.discountExpiry
     ? new Date(product.discountExpiry)
@@ -145,6 +145,12 @@ const ProductCard = ({ product, addToCart }) => {
                 Deal ends:{" "}
                 {discountExpiry.toLocaleString("en-PK", {
                   timeZone: "Asia/Karachi",
+                  hour12: true, 
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </span>
             </div>

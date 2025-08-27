@@ -1,15 +1,21 @@
 import axios from "axios";
 
+// check environment
 const API = axios.create({
-  baseURL: "https://thegiftoasis-backend.onrender.com/api",
+  baseURL:
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:5000/api" // local backend
+      : "https://thegiftoasis-backend.onrender.com/api", // deployed backend
 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// register user
 export const registerUser = (formData) => API.post("/users/register", formData);
-//for login
+
+// auth interceptor
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
