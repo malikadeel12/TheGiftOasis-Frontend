@@ -8,3 +8,23 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* Subtle swing animation for hanging tag */
+@keyframes swing {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(4deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-swing {
+  animation: swing 900ms ease-in-out both;
+  transform-origin: top center;
+}
+
+/* Allow triggering swing via parent .group hover */
+.group:hover .swing-on-hover {
+  animation: swing 900ms ease-in-out both;
+  transform-origin: top center;
+}

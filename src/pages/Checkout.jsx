@@ -1,12 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923001234567";
 
 const CheckoutPage = ({ cartItems, totalPrice }) => {
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("jazzcash");
   const [screenshot, setScreenshot] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const isEmpty = !cartItems || cartItems.length === 0;
+
+  // Guard: if cart is empty, redirect back to cart
+  useEffect(() => {
+    if (isEmpty) {
+      alert("Your cart is empty. Please add products before checkout.");
+      navigate("/cart", { replace: true });
+    }
+  }, [isEmpty, navigate]);
 
   const handleFileChange = (e) => {
     setScreenshot(e.target.files[0]);
@@ -27,6 +39,7 @@ const CheckoutPage = ({ cartItems, totalPrice }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isEmpty) return; // extra safety
     try {
       setLoading(true);
 
@@ -188,7 +201,7 @@ ${screenshotUrl
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isEmpty}
             className="w-full py-3 mt-6 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold rounded-xl hover:from-pink-600 hover:to-rose-500 transition"
           >
             {loading ? "Processing..." : "✅ Order Now"}

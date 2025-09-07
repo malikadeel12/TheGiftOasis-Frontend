@@ -24,6 +24,13 @@ const ProductCard = ({ product, addToCart }) => {
     return `${apiBase.replace(/\/$/, "")}/${product.imageUrl.replace(/^\//, "")}`;
   })();
 
+  // resolve video url (usually absolute from Cloudinary)
+  const videoUrl = (() => {
+    if (!product?.videoUrl) return "";
+    if (/^https?:\/\//i.test(product.videoUrl)) return product.videoUrl;
+    return `${apiBase.replace(/\/$/, "")}/${String(product.videoUrl).replace(/^\//, "")}`;
+  })();
+
   // backend fields
   const discountPercentage = Number(product?.discountPercentage || 0);
   const isDiscountActive = Boolean(product?.isDiscountActive);
@@ -46,6 +53,27 @@ const ProductCard = ({ product, addToCart }) => {
     return () => observer.disconnect();
   }, []);
 
+  // Discount tag presentation: theme + label by discount tier
+  const discountTag = (() => {
+    const dp = discountPercentage;
+    let theme = "from-violet-500 to-indigo-500"; // default subtle
+    let size = "text-[11px] px-3 py-1.5";
+    let label = dp > 0 ? `-${dp}%` : ""; // Low tier default: -% (numeric first for compactness)
+
+    if (dp >= 40) {
+      theme = "from-rose-600 to-red-600";
+      size = "text-[12px] px-3.5 py-1.5";
+      // High tier (big discount): English label
+      label = `${dp}% OFF`;
+    } else if (dp >= 20) {
+      theme = "from-pink-500 to-fuchsia-500";
+      size = "text-[11.5px] px-3.5 py-1.5";
+      // Mid tier: English SALE label
+      label = `SALE ${dp}%`;
+    }
+    return { theme, size, label };
+  })();
+
   return (
     <div
       className="w-72 h-96 cursor-pointer group"
@@ -66,22 +94,49 @@ const ProductCard = ({ product, addToCart }) => {
         >
           <div className="w-full h-full bg-gray-100" ref={imageRef}>
             {imageVisible && (
-              <img
-                src={imageUrl}
-                alt={product?.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = fallbackImage;
-                }}
-              />
+              videoUrl ? (
+                <video
+                  src={videoUrl}
+                  className="w-full h-full object-cover bg-black"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={imageUrl}
+                />
+              ) : (
+                <img
+                  src={imageUrl}
+                  alt={product?.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = fallbackImage;
+                  }}
+                />
+              )
             )}
           </div>
 
           {isDiscountActive && (
-            <span className="absolute top-3 right-3 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs px-3 py-1 rounded-full shadow-md">
-              -{discountPercentage}%
-            </span>
+            <div className="absolute top-0 right-4 flex flex-col items-center select-none">
+              {/* High-tier badge above the tag */}
+              {discountPercentage >= 40 && (
+                <div className="mb-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300 shadow-sm">
+                  Deal of the Day
+                </div>
+              )}
+              {/* string */}
+              <div className="w-0.5 h-6 bg-gray-300/80" />
+              {/* tag */}
+              <div className="relative -mt-1 rotate-6 swing-on-hover" aria-label={`${discountPercentage}% discount tag`}>
+                {/* hole */}
+                <div className="absolute -top-1 left-2 w-2 h-2 bg-white rounded-full shadow-inner" />
+                <div className={`bg-gradient-to-br ${discountTag.theme} text-white ${discountTag.size} font-semibold rounded-md shadow-lg tracking-wide border border-white/20`}
+                >
+                  {discountTag.label}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

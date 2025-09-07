@@ -18,6 +18,7 @@ export default function AdminDashboard() {
       price: "",
       category: "",
       image: null,
+      video: null,
       discountPercentage: "",
       discountStart: "",
       discountEnd: "",
@@ -42,6 +43,8 @@ export default function AdminDashboard() {
     const { name, value, files } = e.target;
     if (name === "image") {
       setForm({ ...form, image: files?.[0] || null });
+    } else if (name === "video") {
+      setForm({ ...form, video: files?.[0] || null });
     } else {
       setForm({ ...form, [name]: value });
     }
@@ -154,11 +157,22 @@ export default function AdminDashboard() {
 
               return (
                 <div key={product._id} className="bg-white rounded-xl shadow-md overflow-hidden">
-                  <img
-                    src={product.imageUrl || "https://via.placeholder.com/300"}
-                    alt={product.name}
-                    className="w-full h-64 object-contain p-2"
-                  />
+                  {product.videoUrl ? (
+                    <video
+                      src={product.videoUrl}
+                      className="w-full h-64 object-contain bg-black"
+                      controls
+                      playsInline
+                      preload="metadata"
+                      poster={product.imageUrl || undefined}
+                    />
+                  ) : (
+                    <img
+                      src={product.imageUrl || "https://via.placeholder.com/300"}
+                      alt={product.name}
+                      className="w-full h-64 object-contain p-2"
+                    />
+                  )}
                   <div className="p-4">
                     <h3 className="text-lg font-bold text-pink-700">{product.name}</h3>
                     <p className="text-gray-600 text-sm mb-2">{product.description}</p>
@@ -272,6 +286,13 @@ export default function AdminDashboard() {
                 type="file"
                 name="image"
                 accept="image/*"
+                onChange={handleChange}
+                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
+              />
+              <input
+                type="file"
+                name="video"
+                accept="video/*"
                 onChange={handleChange}
                 className="border border-pink-300 rounded-lg w-full p-3 mb-4"
               />

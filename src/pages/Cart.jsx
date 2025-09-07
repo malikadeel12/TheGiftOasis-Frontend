@@ -10,6 +10,7 @@ const Cart = ({ cartItems, removeFromCart, updateQuantity }) => {
     (acc, item) => acc + item.price * item.quantity,
     0
   );
+  const isEmpty = cartItems.length === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 p-6">
@@ -98,8 +99,16 @@ const Cart = ({ cartItems, removeFromCart, updateQuantity }) => {
       {/* Checkout Button */}
       <div className="mt-8 max-w-3xl mx-auto">
         <button
-          onClick={() => navigate("/checkout")}
-          className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold text-lg rounded-2xl shadow-md hover:from-pink-600 hover:to-rose-500 transition transform hover:scale-[1.02]"
+          onClick={() => {
+            if (isEmpty) return alert("Your cart is empty. Please add products before checkout.");
+            navigate("/checkout");
+          }}
+          disabled={isEmpty}
+          className={`w-full py-4 text-white font-bold text-lg rounded-2xl shadow-md transition transform ${
+            isEmpty
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 hover:scale-[1.02]"
+          }`}
         >
           ✅ Proceed to Checkout
         </button>
