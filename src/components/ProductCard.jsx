@@ -74,14 +74,16 @@ const ProductCard = ({ product, addToCart }) => {
     return { theme, size, label };
   })();
 
+  const toggleFlip = () => setFlipped((f) => !f);
+
   return (
     <div
       className="w-72 h-96 cursor-pointer group"
       style={{ perspective: "1200px" }}
-      onClick={() => setFlipped(!flipped)}
+      onClick={toggleFlip}
     >
       <div
-        className="relative w-full h-full transition-transform duration-700 ease-in-out group-hover:scale-[1.02]"
+        className="relative w-full h-full transition-transform duration-700 ease-in-out group-hover:scale-[1.02] group-hover:drop-shadow-xl"
         style={{
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -89,10 +91,27 @@ const ProductCard = ({ product, addToCart }) => {
       >
         {/* FRONT */}
         <div
-          className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/20 backdrop-blur-lg border border-white/40 flex items-center justify-center"
+          className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/30 backdrop-blur-xl border border-white/50 flex items-center justify-center"
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
         >
-          <div className="w-full h-full bg-gray-100" ref={imageRef}>
+          {/* Flip button overlay (non-intrusive) */}
+          <button
+            type="button"
+            aria-label="Flip card"
+            onClick={(e) => { e.stopPropagation(); toggleFlip(); }}
+            className="absolute z-10 top-3 left-3 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 border border-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow-sm"
+          >
+            ↻
+          </button>
+
+          <div
+            className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200"
+            ref={imageRef}
+            onClick={(e) => { /* clicking media area flips as well */ e.stopPropagation(); toggleFlip(); }}
+          >
+            {!imageVisible && (
+              <div className="w-full h-full animate-pulse bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200" />
+            )}
             {imageVisible && (
               videoUrl ? (
                 <video
@@ -102,6 +121,7 @@ const ProductCard = ({ product, addToCart }) => {
                   playsInline
                   preload="metadata"
                   poster={imageUrl}
+                  onDoubleClick={(e) => { e.stopPropagation(); toggleFlip(); }}
                 />
               ) : (
                 <img
