@@ -101,7 +101,6 @@ const ProductCard = ({ product, addToCart }) => {
                   controls
                   playsInline
                   preload="metadata"
-                  poster={imageUrl}
                   // Mobile: tap to flip (since double-tap isn't reliable on mobile)
                   onTouchStart={(e) => { e.stopPropagation(); setFlipped((f) => !f); }}
                 />
