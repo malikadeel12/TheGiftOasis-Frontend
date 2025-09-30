@@ -1,10 +1,11 @@
 import axios from "axios";
 
 // check environment
+//age kafi ma na loacl changing krni hui ya check krna hua iss domain ki https://api.thegiftoasis.store ma http://localhost:5000/api kru ga
 const API = axios.create({
   baseURL:
     process.env.NODE_ENV === "development"
-      ? "http://localhost:5000/api" // local backend
+      ? "https://api.thegiftoasis.store" // domain
       : "https://thegiftoasis-backend.onrender.com/api", // deployed backend
 
   headers: {
