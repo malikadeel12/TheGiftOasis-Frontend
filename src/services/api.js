@@ -13,12 +13,22 @@ import axios from "axios";
 // });
 
 //age kafi ma na loacl changing krni hui ya check krna hua iss domain ki https://api.thegiftoasis.store ma http://localhost:5000/api kru ga
-const API = axios.create({
-  baseURL:
-    import.meta.env.DEV || import.meta.env.MODE === "development"
-      ? "http://localhost:5000/api" // ✅ local testing
-      : "https://thegiftoasis-backend.onrender.com/api", // deployed backend
+// Determine base URL - check multiple conditions for development
+// IMPORTANT: In development, always use localhost, ignore VITE_API_BASE_URL
+const isDevelopment = 
+  import.meta.env.DEV || 
+  import.meta.env.MODE === "development" ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
 
+const baseURL = isDevelopment
+  ? "http://localhost:5000/api" // ✅ local testing (always use localhost in dev, ignore .env)
+  : (import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com/api"); // production: use .env or fallback
+
+console.log("🔧 API Base URL:", baseURL, "| Development:", isDevelopment);
+
+const API = axios.create({
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },

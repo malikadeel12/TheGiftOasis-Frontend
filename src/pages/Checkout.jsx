@@ -5,14 +5,21 @@ import { jwtDecode } from "jwt-decode";
 
 // Use same base URL logic as api.js
 const getApiBase = () => {
-  // Vite uses import.meta.env.DEV or import.meta.env.MODE === 'development'
-  const isDev = import.meta.env.DEV || import.meta.env.MODE === "development";
+  // Check multiple conditions for development
+  // IMPORTANT: In development, always use localhost, ignore VITE_API_BASE_URL
+  const isDev = 
+    import.meta.env.DEV || 
+    import.meta.env.MODE === "development" ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
   
   if (isDev) {
-    return "http://localhost:5000"; // ✅ local testing (without /api)
+    return "http://localhost:5000"; // ✅ local testing (always use localhost in dev, ignore .env)
   }
   // For production, use the base URL without /api (we'll add it in the route)
-  return import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com"; // Deployed backend
+  // Remove /api from VITE_API_BASE_URL if present, or use fallback
+  const prodUrl = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
+  return prodUrl.replace(/\/api$/, ""); // Remove trailing /api if present
 };
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923295108102";
@@ -69,6 +76,7 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
       
       const apiBase = getApiBase();
       const uploadUrl = `${apiBase}/api/upload`; // ✅ Correct path
+      console.log("📤 Upload URL:", uploadUrl);
       
       const res = await fetch(uploadUrl, {
         method: "POST",
