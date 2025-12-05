@@ -12,7 +12,7 @@ const getApiBase = () => {
     return "http://localhost:5000"; // ✅ local testing (without /api)
   }
   // For production, use the base URL without /api (we'll add it in the route)
-  return import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store"; // Live domain
+  return import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com"; // Deployed backend
 };
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923295108102";
