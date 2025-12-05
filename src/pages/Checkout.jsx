@@ -17,8 +17,8 @@ const getApiBase = () => {
     return "http://localhost:5000"; // ✅ local testing (always use localhost in dev, ignore .env)
   }
   // For production, use the base URL without /api (we'll add it in the route)
-  // Remove /api from VITE_API_BASE_URL if present, or use fallback
-  const prodUrl = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
+  // Remove /api from VITE_API_BASE_URL if present, or use custom domain
+  const prodUrl = import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store";
   return prodUrl.replace(/\/api$/, ""); // Remove trailing /api if present
 };
 

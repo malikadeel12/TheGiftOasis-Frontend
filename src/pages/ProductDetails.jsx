@@ -139,7 +139,7 @@ const ProductDetails = ({ addToCart }) => {
     if (!product?.imageUrl) return fallbackImage;
     if (/^https?:\/\//i.test(product.imageUrl)) return product.imageUrl;
     const apiBase =
-      import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
+      import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store";
     return `${apiBase.replace(/\/$/, "")}/${String(product.imageUrl).replace(/^\//, "")}`;
   }, [product]);
 

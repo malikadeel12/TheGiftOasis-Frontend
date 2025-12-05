@@ -23,7 +23,7 @@ const isDevelopment =
 
 const baseURL = isDevelopment
   ? "http://localhost:5000/api" // ✅ local testing (always use localhost in dev, ignore .env)
-  : (import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com/api"); // production: use .env or fallback
+  : (import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store/api"); // production: use custom domain
 
 console.log("🔧 API Base URL:", baseURL, "| Development:", isDevelopment);
 

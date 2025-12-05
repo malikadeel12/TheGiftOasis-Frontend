@@ -11,7 +11,7 @@ const ProductCard = ({ product, addToCart = () => {} }) => {
   const navigate = useNavigate();
 
   const apiBase =
-    import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
+    import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store";
 
   const productId = product._id || product.id;
 
