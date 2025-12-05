@@ -1,11 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserPlus, LogIn, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 
-export default function Navbar({ cartItems }) {
+export default function Navbar({ cartItems = [] }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("token"));
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("authChange", handleAuthChange);
+    return () => {
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("authChange", handleAuthChange);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/");
+  };
 
   // ✅ Total items count
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -30,6 +51,9 @@ export default function Navbar({ cartItems }) {
             </Link>
             <Link to="/shop" className="text-pink-600 hover:text-pink-800 font-medium">
               Shop
+            </Link>
+            <Link to="/blog" className="text-pink-600 hover:text-pink-800 font-medium">
+              Blog
             </Link>
 
             {/* Instagram */}
@@ -60,20 +84,39 @@ export default function Navbar({ cartItems }) {
             </a>
 
             {/* Actions */}
-            <Link
-              to="/login"
-              className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
-            >
-              <LogIn size={18} />
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
-            >
-              <UserPlus size={18} />
-              New Account
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/my-orders"
+                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
+                >
+                  📦 My Orders
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
+                >
+                  <LogIn size={18} />
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
+                >
+                  <UserPlus size={18} />
+                  New Account
+                </Link>
+              </>
+            )}
             <Link
               to="/cart"
               className="relative flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
@@ -109,6 +152,9 @@ export default function Navbar({ cartItems }) {
           <Link to="/shop" className="block text-pink-600 hover:text-pink-800">
             Shop
           </Link>
+              <Link to="/blog" className="block text-pink-600 hover:text-pink-800">
+                Blog
+              </Link>
 
           {/* Instagram */}
           <a
@@ -138,23 +184,49 @@ export default function Navbar({ cartItems }) {
           </a>
 
           <div className="flex flex-col gap-2">
-            <Link
-              to="/login"
-              className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
-            >
-              <LogIn size={18} />
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
-            >
-              <UserPlus size={18} />
-              New Account
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/my-orders"
+                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  📦 My Orders
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <LogIn size={18} />
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <UserPlus size={18} />
+                  New Account
+                </Link>
+              </>
+            )}
             <Link
               to="/cart"
               className="relative flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
+              onClick={() => setIsMenuOpen(false)}
             >
               <ShoppingCart size={18} />
               Cart

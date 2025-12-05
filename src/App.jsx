@@ -10,6 +10,11 @@ import Login from "./pages/Login";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import CheckoutPage from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
+import MyOrders from "./pages/MyOrders";
+import ProductDetails from "./pages/ProductDetails";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 function App() {
   // ✅ Load cart from localStorage on initial render
@@ -57,6 +62,12 @@ function App() {
     );
   };
 
+  // Clear entire cart
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem("cartItems");
+  };
+
   // Calculate total for checkout
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
@@ -67,10 +78,13 @@ function App() {
     <Router>
       <Navbar cartItems={cartItems} />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home addToCart={addToCart} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/shop" element={<Shop addToCart={addToCart} />} />
+        <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} />} />
         <Route
           path="/cart"
           element={
@@ -82,11 +96,22 @@ function App() {
           }
         />
         <Route
-          path="/checkout"
+          path="/my-orders"
           element={
-            <CheckoutPage cartItems={cartItems} totalPrice={totalPrice} />
+            <ProtectedRoute>
+              <MyOrders />
+            </ProtectedRoute>
           }
         />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <CheckoutPage cartItems={cartItems} totalPrice={totalPrice} clearCart={clearCart} />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/order-success" element={<OrderSuccess />} />
         <Route
           path="/admin"
           element={

@@ -1,10 +1,76 @@
 // src/pages/Home.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaCheckCircle, FaGift, FaTags, FaRegHeart } from "react-icons/fa";
 import LogoImage from "../assets/logo.jpg";
 import WhatsAppButton from "../components/WhatsAppButton";
+import ProductCard from "../components/ProductCard";
+import { getHighlights } from "../services/api";
 
-export default function Home() {
+export default function Home({ addToCart = () => {} }) {
+    const [highlights, setHighlights] = useState({
+        featured: [],
+        bundles: [],
+        newArrivals: [],
+        bestSellers: [],
+    });
+    const [loadingHighlights, setLoadingHighlights] = useState(true);
+    const [highlightError, setHighlightError] = useState("");
+
+    useEffect(() => {
+        const fetchHighlights = async () => {
+            try {
+                setLoadingHighlights(true);
+                const res = await getHighlights();
+                setHighlights({
+                    featured: res.data?.featured || [],
+                    bundles: res.data?.bundles || [],
+                    newArrivals: res.data?.newArrivals || [],
+                    bestSellers: res.data?.bestSellers || [],
+                });
+                setHighlightError("");
+            } catch (err) {
+                console.error("❌ Highlights load error:", err);
+                setHighlightError(
+                    err.response?.data?.message ||
+                        err.message ||
+                        "Unable to load highlights right now."
+                );
+            } finally {
+                setLoadingHighlights(false);
+            }
+        };
+
+        fetchHighlights();
+    }, []);
+
+    const renderHighlightSection = (title, products, emoji) => {
+        if (!products || products.length === 0) return null;
+        return (
+            <section className="max-w-7xl mx-auto px-6 lg:px-12 py-14">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                        <span>{emoji}</span> {title}
+                    </h2>
+                    <a
+                        href="/shop"
+                        className="text-pink-600 hover:text-pink-700 text-sm font-semibold"
+                    >
+                        View all
+                    </a>
+                </div>
+                <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4">
+                    {products.map((product) => (
+                        <ProductCard
+                            key={product._id}
+                            product={product}
+                            addToCart={addToCart}
+                        />
+                    ))}
+                </div>
+            </section>
+        );
+    };
+
     return (
         <div className="bg-gradient-to-b from-pink-50 via-white to-pink-50">
 
@@ -40,6 +106,42 @@ export default function Home() {
                             className="w-full max-w-sm object-contain rounded-2xl shadow-md"
                         />
                     </div>
+                </div>
+            </section>
+
+            {/* Highlights */}
+            <section className="bg-white py-12">
+                <div className="max-w-7xl mx-auto px-6 lg:px-12">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
+                        Curated Picks for Every Shopper
+                    </h2>
+                    <p className="text-center text-gray-600 mt-2">
+                        Discover what&apos;s trending, newly added, and most loved by our community.
+                    </p>
+                    {highlightError && (
+                        <div className="mt-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl px-4 py-3 text-center">
+                            {highlightError}
+                        </div>
+                    )}
+                    {loadingHighlights ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+                            {Array(4)
+                                .fill(0)
+                                .map((_, idx) => (
+                                    <div
+                                        key={`highlight-skeleton-${idx}`}
+                                        className="h-80 bg-pink-100/60 rounded-2xl animate-pulse"
+                                    />
+                                ))}
+                        </div>
+                    ) : (
+                        <>
+                            {renderHighlightSection("Featured Gifts", highlights.featured, "✨")}
+                            {renderHighlightSection("Bundle & Promo Deals", highlights.bundles, "🎁")}
+                            {renderHighlightSection("New Arrivals", highlights.newArrivals, "🆕")}
+                            {renderHighlightSection("Best Sellers", highlights.bestSellers, "🏆")}
+                        </>
+                    )}
                 </div>
             </section>
 

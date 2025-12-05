@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { Navigate } from "react-router-dom";
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
   const token = localStorage.getItem("token");

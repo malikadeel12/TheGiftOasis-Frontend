@@ -1,14 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createOrder } from "../services/api";
+import { jwtDecode } from "jwt-decode";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923001234567";
+// Use same base URL logic as api.js
+const getApiBase = () => {
+  // Vite uses import.meta.env.DEV or import.meta.env.MODE === 'development'
+  const isDev = import.meta.env.DEV || import.meta.env.MODE === "development";
+  
+  if (isDev) {
+    return "http://localhost:5000"; // ✅ local testing (without /api)
+  }
+  // For production, use the base URL without /api (we'll add it in the route)
+  return import.meta.env.VITE_API_BASE_URL || "https://api.thegiftoasis.store"; // Live domain
+};
 
-const CheckoutPage = ({ cartItems, totalPrice }) => {
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "923295108102";
+
+const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState("jazzcash");
+  const [paymentMethod, setPaymentMethod] = useState("easypaisa");
   const [screenshot, setScreenshot] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const isEmpty = !cartItems || cartItems.length === 0;
 
@@ -20,38 +35,121 @@ const CheckoutPage = ({ cartItems, totalPrice }) => {
     }
   }, [isEmpty, navigate]);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in first to place an order.");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      setIsAuthenticated(true);
+      if (decoded?.email) {
+        setCustomerEmail(decoded.email);
+      }
+    } catch (err) {
+      console.warn("Failed to decode token for checkout:", err);
+      alert("Please log in again to place an order.");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
+
   const handleFileChange = (e) => {
     setScreenshot(e.target.files[0]);
   };
 
   const uploadScreenshot = async () => {
     if (!screenshot) return null;
-    const form = new FormData();
-    form.append("file", screenshot);
-    const res = await fetch(`${API_BASE}/api/upload`, {
-      method: "POST",
-      body: form,
-    });
-    if (!res.ok) throw new Error("Screenshot upload failed");
-    const data = await res.json();
-    return data.url; // Cloudinary public URL
+    try {
+      const form = new FormData();
+      form.append("file", screenshot);
+      
+      const apiBase = getApiBase();
+      const uploadUrl = `${apiBase}/api/upload`; // ✅ Correct path
+      
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        body: form,
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Upload error response:", errorText);
+        throw new Error(`Screenshot upload failed: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      return data.url; // Cloudinary public URL
+    } catch (err) {
+      console.error("Upload error:", err);
+      throw err;
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEmpty) return; // extra safety
+    if (isEmpty || !isAuthenticated) return; // extra safety
     try {
       setLoading(true);
 
       const formData = new FormData(e.target);
       const name = formData.get("name");
+      const email = formData.get("email");
       const phone = formData.get("phone");
       const address = formData.get("address");
 
       // 1) Upload screenshot (get public URL)
       const screenshotUrl = await uploadScreenshot();
 
-      // 2) Build order summary
+      // 2) Prepare order items for database
+      const orderItems = cartItems.map((item) => ({
+        productId: item._id || item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        imageUrl: item.image || item.imageUrl || "",
+      }));
+
+      // 3) Create order in database
+      const orderData = {
+        customerInfo: {
+          name,
+          email: email || undefined,
+          phone,
+          address,
+        },
+        items: orderItems,
+        paymentInfo: {
+          method: paymentMethod,
+          screenshotUrl: screenshotUrl || "",
+        },
+        totalAmount: totalPrice,
+      };
+
+      console.log("📦 Order data being sent:", JSON.stringify(orderData, null, 2));
+      
+      const orderResponse = await createOrder(orderData);
+      console.log("📥 Full order response:", orderResponse);
+      console.log("📥 Response data:", orderResponse.data);
+      
+      // Check if order exists in response
+      if (!orderResponse.data || !orderResponse.data.order) {
+        throw new Error("Invalid response from server - order data missing");
+      }
+      
+      const order = orderResponse.data.order;
+      console.log("✅ Order created successfully:", order);
+      
+      // Validate required fields
+      if (!order.orderNumber) {
+        console.error("❌ Order number missing in response:", order);
+        throw new Error("Order created but order number is missing");
+      }
+
+      // 4) Build order summary for WhatsApp (optional)
       const orderText =
         cartItems.length > 0
           ? cartItems
@@ -64,17 +162,18 @@ const CheckoutPage = ({ cartItems, totalPrice }) => {
             .join("\n")
           : "No items";
 
-      // 3) Payment account numbers (display in message too)
+      // 5) Payment account numbers
       const accounts = {
         easypaisa: "03255313675 (Title: KHANSA FAHEEM)",
         bank: "08240111941210 (Meezan Bank, IBAN: PK32MEZN0008240111941210)",
       };
 
-
-      // 4) WhatsApp text
+      // 6) WhatsApp text with Order Number
       const message = `
 🛍️ *New Order Received*
 ———————————————
+🆔 Order Number: ${order.orderNumber}
+
 👤 Name: ${name}
 📞 Phone: ${phone}
 🏠 Address: ${address}
@@ -97,11 +196,52 @@ ${screenshotUrl
         message
       )}`;
 
-      // 5) Open WhatsApp
-      window.open(waUrl, "_blank");
+      // 7) Clear cart
+      if (clearCart) {
+        clearCart();
+      }
+
+      // 8) Prepare navigation state
+      const navigationState = {
+        orderNumber: order.orderNumber,
+        orderId: order._id,
+        totalAmount: totalPrice,
+        customerName: name,
+      };
+      
+      console.log("🧭 Navigating to success page with:", navigationState);
+      
+      // Small delay to ensure state is set properly
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to success page
+      navigate("/order-success", {
+        state: navigationState,
+        replace: true,
+      });
+      
+      console.log("✅ Navigation triggered");
+      
+      // 9) Open WhatsApp in new tab (after navigation)
+      setTimeout(() => {
+        window.open(waUrl, "_blank");
+      }, 1500);
     } catch (err) {
-      console.error(err);
-      alert("Something went wrong while placing the order. Please try again.");
+      console.error("❌ Order creation error:", err);
+      console.error("❌ Error response:", err.response?.data);
+      console.error("❌ Error details:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      
+      const errorMessage = 
+        err.response?.data?.message || 
+        err.response?.data?.error || 
+        err.message || 
+        "Something went wrong while placing the order. Please try again.";
+      
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -125,6 +265,14 @@ ${screenshotUrl
             placeholder="Full Name"
             className="w-full p-3 border rounded-xl"
             required
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email (optional)"
+            className="w-full p-3 border rounded-xl"
+            value={customerEmail}
+            onChange={(e) => setCustomerEmail(e.target.value)}
           />
           <input
             name="phone"

@@ -26,6 +26,7 @@ const Login = () => {
       alert(res.data.message || "Login Successful!");
        const token = res.data.token;
        localStorage.setItem("token", token);
+       window.dispatchEvent(new Event("authChange"));
        const decoded = jwtDecode(token);
        if (decoded.role === "admin") navigate("/admin");
        else navigate("/");

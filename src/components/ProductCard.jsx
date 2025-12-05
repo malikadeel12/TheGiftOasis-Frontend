@@ -1,12 +1,14 @@
 // src/components/ProductCard.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import moment from "moment-timezone";
 
-const ProductCard = ({ product, addToCart }) => {
+const ProductCard = ({ product, addToCart = () => {} }) => {
   const [flipped, setFlipped] = useState(false);
   const [imageVisible, setImageVisible] = useState(false);
   const imageRef = useRef(null);
+  const navigate = useNavigate();
 
   const apiBase =
     import.meta.env.VITE_API_BASE_URL || "https://thegiftoasis-backend.onrender.com";
@@ -37,6 +39,7 @@ const ProductCard = ({ product, addToCart }) => {
   const discountExpiry = product?.discountExpiry ? new Date(product.discountExpiry) : null;
   const showExpiry = isDiscountActive && discountExpiry && discountExpiry > new Date();
   const finalPrice = product?.finalPrice ?? product?.price;
+  const averageRating = Number(product?.averageRating || 0).toFixed(1);
 
   // Lazy load images using IntersectionObserver
   useEffect(() => {
@@ -92,6 +95,23 @@ const ProductCard = ({ product, addToCart }) => {
           className="absolute w-full h-full rounded-2xl shadow-xl overflow-hidden bg-white/20 backdrop-blur-lg border border-white/40 flex items-center justify-center"
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
         >
+          {(product?.isFeatured || product?.promotionBadge) && (
+            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+              {product?.isFeatured && (
+                <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                  ⭐ Featured
+                </span>
+              )}
+              {product?.promotionBadge && (
+                <span className="bg-amber-200 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                  {product.promotionBadge}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-yellow-600 shadow flex items-center gap-1">
+            ⭐ {averageRating}
+          </div>
           <div className="w-full h-full bg-gray-100" ref={imageRef}>
             {imageVisible && (
               videoUrl ? (
@@ -197,6 +217,32 @@ const ProductCard = ({ product, addToCart }) => {
               <ShoppingCart size={16} /> Add
             </button>
           </div>
+
+          {(product?.bundleItems?.length > 0 || product?.promoCode) && (
+            <div className="mt-3 space-y-2">
+              {product?.bundleItems?.length > 0 && (
+                <div className="bg-purple-50 text-purple-700 text-xs rounded-lg px-3 py-2 shadow-inner">
+                  Bundle: {product.bundleItems.slice(0, 2).join(", ")}
+                  {product.bundleItems.length > 2 && " + more"}
+                </div>
+              )}
+              {product?.promoCode && (
+                <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-2 shadow-inner">
+                  Use code <span className="font-semibold uppercase tracking-wide">{product.promoCode}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/products/${productId}`);
+            }}
+            className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
+          >
+            View Details <ArrowRight size={16} />
+          </button>
 
           {/* Discount Expiry */}
           {showExpiry && (
