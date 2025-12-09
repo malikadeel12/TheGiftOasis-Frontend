@@ -120,7 +120,7 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
 
       const formData = new FormData(e.target);
       const name = formData.get("name");
-      const email = formData.get("email");
+      const email = formData.get("email")?.trim() || customerEmail?.trim() || "";
       const phone = formData.get("phone");
       const address = formData.get("address");
 
@@ -140,7 +140,7 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
       const orderData = {
         customerInfo: {
           name,
-          email: email || undefined,
+          email: email || undefined, // Backend will use token email as fallback
           phone,
           address,
         },
@@ -153,23 +153,46 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
       };
 
       console.log("📦 Order data being sent:", JSON.stringify(orderData, null, 2));
+      console.log("⏳ Calling createOrder API...");
       
-      const orderResponse = await createOrder(orderData);
-      console.log("📥 Full order response:", orderResponse);
-      console.log("📥 Response data:", orderResponse.data);
-      
-      // Check if order exists in response
-      if (!orderResponse.data || !orderResponse.data.order) {
-        throw new Error("Invalid response from server - order data missing");
+      let orderResponse;
+      try {
+        orderResponse = await createOrder(orderData);
+        console.log("✅ API call completed, processing response...");
+        console.log("📥 Full order response:", orderResponse);
+        console.log("📥 Response data:", orderResponse?.data);
+        console.log("📥 Response status:", orderResponse?.status);
+      } catch (apiError) {
+        console.error("❌ API call failed:", apiError);
+        throw apiError; // Re-throw to be caught by outer catch block
       }
       
-      const order = orderResponse.data.order;
-      console.log("✅ Order created successfully:", order);
+      // Check if response exists
+      if (!orderResponse || !orderResponse.data) {
+        throw new Error("No response received from server");
+      }
+      
+      // Check if order exists in response - handle different response structures
+      let order = null;
+      if (orderResponse.data?.order) {
+        order = orderResponse.data.order;
+      } else if (orderResponse.data && orderResponse.data.orderNumber) {
+        // Handle case where order is directly in data
+        order = orderResponse.data;
+      } else if (orderResponse.order) {
+        // Handle case where order is at root level
+        order = orderResponse.order;
+      } else {
+        console.error("❌ Unexpected response structure:", orderResponse);
+        throw new Error("Invalid response from server - order data missing. Response: " + JSON.stringify(orderResponse.data));
+      }
+      
+      console.log("✅ Order extracted successfully:", order);
       
       // Validate required fields
-      if (!order.orderNumber) {
+      if (!order || !order.orderNumber) {
         console.error("❌ Order number missing in response:", order);
-        throw new Error("Order created but order number is missing");
+        throw new Error("Order created but order number is missing. Order data: " + JSON.stringify(order));
       }
 
       // 4) Build order summary for WhatsApp (optional)
@@ -234,21 +257,20 @@ ${screenshotUrl
       
       console.log("🧭 Navigating to success page with:", navigationState);
       
-      // Small delay to ensure state is set properly
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Reset loading state before navigation to prevent UI freeze
+      setLoading(false);
       
       // Navigate to success page
       navigate("/order-success", {
         state: navigationState,
         replace: true,
       });
-      
       console.log("✅ Navigation triggered");
       
       // 9) Open WhatsApp in new tab (after navigation)
       setTimeout(() => {
         window.open(waUrl, "_blank");
-      }, 1500);
+      }, 500);
     } catch (err) {
       console.error("❌ Order creation error:", err);
       console.error("❌ Error response:", err.response?.data);
@@ -256,7 +278,11 @@ ${screenshotUrl
         message: err.message,
         status: err.response?.status,
         data: err.response?.data,
+        stack: err.stack,
       });
+      
+      // Always reset loading state first
+      setLoading(false);
       
       const errorMessage = 
         err.response?.data?.message || 
@@ -272,8 +298,20 @@ ${screenshotUrl
         return;
       }
       
+      // Check for network errors
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        alert("Request timed out. Please check your internet connection and try again.");
+        return;
+      }
+      
+      if (err.message?.includes('Network Error') || !err.response) {
+        alert("Network error. Please check your internet connection and try again.");
+        return;
+      }
+      
       alert(`Error: ${errorMessage}`);
     } finally {
+      // Ensure loading is always reset, even if there was an unexpected error
       setLoading(false);
     }
   };
@@ -302,7 +340,7 @@ ${screenshotUrl
             type="email"
             placeholder="Email (optional)"
             className="w-full p-3 border rounded-xl"
-            value={customerEmail}
+            value={customerEmail || ""}
             onChange={(e) => setCustomerEmail(e.target.value)}
           />
           <input
