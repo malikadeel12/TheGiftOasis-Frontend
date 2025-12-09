@@ -255,22 +255,35 @@ ${screenshotUrl
         customerName: name,
       };
       
+      // Store order data in localStorage as backup (in case state is lost)
+      localStorage.setItem("lastOrderSuccess", JSON.stringify(navigationState));
+      
       console.log("🧭 Navigating to success page with:", navigationState);
       
       // Reset loading state before navigation to prevent UI freeze
       setLoading(false);
       
-      // Navigate to success page
-      navigate("/order-success", {
-        state: navigationState,
-        replace: true,
-      });
-      console.log("✅ Navigation triggered");
-      
-      // 9) Open WhatsApp in new tab (after navigation)
+      // Use setTimeout to ensure state updates are complete before navigation
+      // This helps ensure React Router properly handles the navigation
       setTimeout(() => {
-        window.open(waUrl, "_blank");
-      }, 500);
+        try {
+          // Navigate to success page
+          navigate("/order-success", {
+            state: navigationState,
+            replace: true,
+          });
+          console.log("✅ Navigation triggered");
+          
+          // Open WhatsApp in new tab (after navigation)
+          setTimeout(() => {
+            window.open(waUrl, "_blank");
+          }, 500);
+        } catch (navError) {
+          console.error("❌ Navigation error:", navError);
+          // Fallback: try direct window location change
+          window.location.href = "/order-success";
+        }
+      }, 100);
     } catch (err) {
       console.error("❌ Order creation error:", err);
       console.error("❌ Error response:", err.response?.data);

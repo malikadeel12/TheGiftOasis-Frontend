@@ -5,22 +5,51 @@ import { CheckCircle, ShoppingBag, Home, Phone } from "lucide-react";
 export default function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { orderNumber, orderId, totalAmount, customerName } = location.state || {};
+  
+  // Try to get order data from location state first, then from localStorage as fallback
+  const [orderData, setOrderData] = React.useState(() => {
+    const stateData = location.state || {};
+    if (stateData.orderNumber) {
+      return stateData;
+    }
+    // Fallback to localStorage
+    try {
+      const saved = localStorage.getItem("lastOrderSuccess");
+      return saved ? JSON.parse(saved) : {};
+    } catch (err) {
+      console.warn("⚠️ Failed to parse localStorage order data:", err);
+      return {};
+    }
+  });
+  
+  const { orderNumber, orderId, totalAmount, customerName } = orderData;
+  
+  // Update order data if location state changes
+  React.useEffect(() => {
+    if (location.state?.orderNumber) {
+      setOrderData(location.state);
+    }
+  }, [location.state]);
 
   // Debug: Log state data
   React.useEffect(() => {
     console.log("📄 OrderSuccess - Location state:", location.state);
+    console.log("📄 OrderSuccess - Final order data:", orderData);
     console.log("📄 OrderSuccess - Order Number:", orderNumber);
-  }, [location.state, orderNumber]);
+  }, [location.state, orderData, orderNumber]);
 
   // If no order data, show message and redirect after delay
   React.useEffect(() => {
     if (!orderNumber) {
-      console.warn("⚠️ No order number found in state, redirecting to home...");
+      console.warn("⚠️ No order number found in state or localStorage, redirecting to home...");
       const timer = setTimeout(() => {
         navigate("/", { replace: true });
       }, 3000);
       return () => clearTimeout(timer);
+    } else {
+      console.log("✅ Order data loaded successfully:", orderNumber);
+      // Clear localStorage data after successful load (optional - you can keep it for reference)
+      // localStorage.removeItem("lastOrderSuccess");
     }
   }, [orderNumber, navigate]);
 
