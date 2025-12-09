@@ -52,6 +52,20 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
 
     try {
       const decoded = jwtDecode(token);
+      
+      // Check if token is expired
+      if (decoded.exp) {
+        const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+        if (Date.now() >= expirationTime) {
+          console.warn("Token expired");
+          alert("Your session has expired. Please log in again to place an order.");
+          localStorage.removeItem("token");
+          window.dispatchEvent(new Event("authChange"));
+          navigate("/login", { replace: true });
+          return;
+        }
+      }
+      
       setIsAuthenticated(true);
       if (decoded?.email) {
         setCustomerEmail(decoded.email);
@@ -60,6 +74,7 @@ const CheckoutPage = ({ cartItems, totalPrice, clearCart }) => {
       console.warn("Failed to decode token for checkout:", err);
       alert("Please log in again to place an order.");
       localStorage.removeItem("token");
+      window.dispatchEvent(new Event("authChange"));
       navigate("/login", { replace: true });
     }
   }, [navigate]);
@@ -248,6 +263,14 @@ ${screenshotUrl
         err.response?.data?.error || 
         err.message || 
         "Something went wrong while placing the order. Please try again.";
+      
+      // If authentication is required, redirect to login
+      if (err.response?.status === 401 || err.response?.status === 403 || err.response?.data?.requiresLogin) {
+        alert(`${errorMessage}\n\nYou will be redirected to the login page.`);
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+        return;
+      }
       
       alert(`Error: ${errorMessage}`);
     } finally {
