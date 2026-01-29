@@ -1103,6 +1103,23 @@ export default function AdminDashboard() {
               <p><strong>Address:</strong> {selectedOrder.customerInfo.address}</p>
             </div>
 
+            {/* Category Summary */}
+            {selectedOrder.items.some(item => item.category) && (
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-4 border border-purple-100">
+                <h3 className="font-bold text-purple-700 mb-2">📂 Categories in this Order</h3>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(new Set(selectedOrder.items.map(item => item.category).filter(Boolean))).map((category, idx) => (
+                    <span 
+                      key={idx} 
+                      className="bg-white text-purple-700 px-3 py-1 rounded-full text-sm font-medium shadow-sm border border-purple-200"
+                    >
+                      {category}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Order Items */}
             <div className="mb-4">
               <h3 className="font-bold text-pink-700 mb-2">Order Items</h3>
@@ -1119,7 +1136,12 @@ export default function AdminDashboard() {
                       )}
                       <div>
                         <p className="font-semibold">{item.name}</p>
-                        <p className="text-sm text-gray-600">Qty: {item.quantity} × Rs.{item.price}</p>
+                        {item.category && (
+                          <span className="inline-block bg-pink-100 text-pink-700 text-xs px-2 py-0.5 rounded-full mt-1">
+                            📁 {item.category}
+                          </span>
+                        )}
+                        <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity} × Rs.{item.price}</p>
                       </div>
                     </div>
                     <p className="font-bold">Rs. {(item.quantity * item.price).toFixed(2)}</p>
