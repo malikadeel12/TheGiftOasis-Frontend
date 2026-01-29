@@ -94,7 +94,7 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
 
   return (
     <div
-      className="w-72 h-96 cursor-pointer group"
+      className="w-full max-w-[288px] mx-auto h-96 cursor-pointer group"
       style={{ perspective: "1200px" }}
       onClick={() => setFlipped(!flipped)}
     >
