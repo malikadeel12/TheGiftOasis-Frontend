@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Breadcrumb from "./components/Breadcrumb";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import Home from "./pages/Home";
@@ -15,6 +17,9 @@ import MyOrders from "./pages/MyOrders";
 import ProductDetails from "./pages/ProductDetails";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Wishlist from "./pages/Wishlist";
 
 function App() {
   // ✅ Load cart from localStorage on initial render
@@ -22,6 +27,33 @@ function App() {
     const saved = localStorage.getItem("cartItems");
     return saved ? JSON.parse(saved) : [];
   });
+
+  // ✅ Load wishlist from localStorage
+  const [wishlist, setWishlist] = useState(() => {
+    const saved = localStorage.getItem("wishlist");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // ✅ Save wishlist to localStorage
+  useEffect(() => {
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  const addToWishlist = (product) => {
+    setWishlist((prev) => {
+      const exists = prev.find((item) => item._id === product._id);
+      if (exists) return prev;
+      return [...prev, product];
+    });
+  };
+
+  const removeFromWishlist = (productId) => {
+    setWishlist((prev) => prev.filter((item) => item._id !== productId));
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlist.some((item) => item._id === productId);
+  };
 
   // ✅ Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -76,15 +108,20 @@ function App() {
 
   return (
     <Router>
-      <Navbar cartItems={cartItems} />
-      <Routes>
+      <div className="flex flex-col min-h-screen">
+        <Navbar cartItems={cartItems} wishlistCount={wishlist.length} />
+        <Breadcrumb />
+        <main className="flex-grow">
+          <Routes>
         <Route path="/" element={<Home addToCart={addToCart} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/shop" element={<Shop addToCart={addToCart} />} />
-        <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} />} />
+        <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
         <Route
           path="/cart"
           element={
@@ -92,6 +129,16 @@ function App() {
               cartItems={cartItems}
               removeFromCart={removeFromCart}
               updateQuantity={updateQuantity}
+            />
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <Wishlist
+              wishlist={wishlist}
+              removeFromWishlist={removeFromWishlist}
+              addToCart={addToCart}
             />
           }
         />
@@ -121,6 +168,9 @@ function App() {
           }
         />
       </Routes>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 }

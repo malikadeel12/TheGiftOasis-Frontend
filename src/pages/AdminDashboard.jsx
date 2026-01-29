@@ -10,6 +10,24 @@ import api, {
   deleteBlogPost,
 } from "../services/api";
 import moment from "moment-timezone";
+import toast from "react-hot-toast";
+import { LoadingButton, SkeletonGrid } from "../components/LoadingSpinner";
+import OrderTimeline from "../components/OrderTimeline";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("products"); // "products" or "orders"
@@ -55,6 +73,8 @@ export default function AdminDashboard() {
       promoDescription: "",
       promoExpiresAt: "",
       bundleItemsInput: "",
+      stock: "",
+      lowStockThreshold: "5",
     };
   }
 
@@ -137,15 +157,13 @@ export default function AdminDashboard() {
     try {
       setOrderLoading(true);
       await updateOrderStatus(orderId, newStatus, notes);
-      setMessage(`✅ Order status updated to ${newStatus}`);
+      toast.success(`Order status updated to ${newStatus}`);
       fetchOrders();
       fetchOrderStats();
       setIsOrderModalOpen(false);
       setSelectedOrder(null);
-      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || "Error updating order"}`);
-      setTimeout(() => setMessage(""), 3000);
+      toast.error(err.response?.data?.message || "Error updating order");
     } finally {
       setOrderLoading(false);
     }
@@ -321,6 +339,7 @@ export default function AdminDashboard() {
       price: product.price || "",
       category: product.category || "",
       image: null,
+      video: null,
       discountPercentage: product.discountPercentage || "",
       discountStart: formatDateForInput(product.discountStart),
       discountEnd: formatDateForInput(product.discountEnd),
@@ -332,6 +351,8 @@ export default function AdminDashboard() {
       bundleItemsInput: Array.isArray(product.bundleItems)
         ? product.bundleItems.join("\n")
         : "",
+      stock: product.stock || "",
+      lowStockThreshold: product.lowStockThreshold || "5",
     });
     setEditingId(product._id);
     setIsModalOpen(true);
@@ -403,6 +424,16 @@ export default function AdminDashboard() {
             }`}
           >
             📝 Blog
+          </button>
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`px-6 py-2 rounded-lg font-semibold transition ${
+              activeTab === "analytics"
+                ? "bg-pink-500 text-white shadow-md"
+                : "bg-white text-pink-600 border-2 border-pink-300"
+            }`}
+          >
+            📊 Analytics
           </button>
         </div>
 
@@ -498,9 +529,31 @@ export default function AdminDashboard() {
                       <p className="text-pink-500 font-semibold">₨ {product.price}</p>
                     )}
 
-                    <span className="text-xs text-gray-500 block mb-3">
+                    <span className="text-xs text-gray-500 block mb-1">
                       Category: {product.category}
                     </span>
+
+                    {/* Stock Status */}
+                    {product.stock !== undefined && (
+                      <div className="mb-3">
+                        {product.stockStatus === "out_of_stock" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                            Out of Stock
+                          </span>
+                        ) : product.stockStatus === "low_stock" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                            Low Stock ({product.stock} left)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            In Stock ({product.stock})
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                       <span>Rating: ⭐ {avgRating} ({product.ratingCount || 0})</span>
@@ -777,6 +830,11 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && (
+          <AnalyticsTab orders={orders} orderStats={orderStats} />
+        )}
       </div>
 
       {/* Modal Form */}
@@ -847,6 +905,34 @@ export default function AdminDashboard() {
                 onChange={handleChange}
                 className="border border-pink-300 rounded-lg w-full p-3 mb-4"
               />
+
+              {/* Stock Fields */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">Stock Quantity</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    placeholder="Stock"
+                    value={form.stock}
+                    onChange={handleChange}
+                    className="border border-pink-300 rounded-lg w-full p-3"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">Low Stock Alert</label>
+                  <input
+                    type="number"
+                    name="lowStockThreshold"
+                    placeholder="Alert at"
+                    value={form.lowStockThreshold}
+                    onChange={handleChange}
+                    className="border border-pink-300 rounded-lg w-full p-3"
+                    min="1"
+                  />
+                </div>
+              </div>
 
               {/* Discount Fields */}
               <input
@@ -1095,6 +1181,14 @@ export default function AdminDashboard() {
               Order Details: {selectedOrder.orderNumber}
             </h2>
 
+            {/* Order Timeline */}
+            <div className="mb-4">
+              <OrderTimeline 
+                status={selectedOrder.status} 
+                updatedAt={selectedOrder.updatedAt}
+              />
+            </div>
+
             {/* Customer Info */}
             <div className="bg-pink-50 rounded-lg p-4 mb-4">
               <h3 className="font-bold text-pink-700 mb-2">Customer Information</h3>
@@ -1213,6 +1307,165 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// Analytics Tab Component
+function AnalyticsTab({ orders, orderStats }) {
+  // Prepare data for charts
+  const statusData = orderStats ? [
+    { name: "Pending", value: orderStats.pending, color: "#eab308" },
+    { name: "Confirmed", value: orderStats.confirmed, color: "#3b82f6" },
+    { name: "Processing", value: orderStats.processing, color: "#a855f7" },
+    { name: "Dispatched", value: orderStats.dispatched, color: "#6366f1" },
+    { name: "Delivered", value: orderStats.delivered, color: "#22c55e" },
+    { name: "Cancelled", value: orderStats.cancelled, color: "#ef4444" },
+  ].filter(d => d.value > 0) : [];
+
+  // Revenue by date (last 7 days)
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
+    return {
+      date: moment(date).format('MMM DD'),
+      fullDate: date,
+      revenue: 0,
+      orders: 0,
+    };
+  }).reverse();
+
+  orders?.forEach(order => {
+    const orderDate = moment(order.createdAt).format('YYYY-MM-DD');
+    const dayData = last7Days.find(d => d.fullDate === orderDate);
+    if (dayData && order.status === 'delivered') {
+      dayData.revenue += order.totalAmount;
+    }
+    if (dayData) {
+      dayData.orders += 1;
+    }
+  });
+
+  // Top categories
+  const categoryData = {};
+  orders?.forEach(order => {
+    order.items?.forEach(item => {
+      if (item.category) {
+        categoryData[item.category] = (categoryData[item.category] || 0) + item.quantity;
+      }
+    });
+  });
+
+  const topCategories = Object.entries(categoryData)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  const categoryColors = ["#ec4899", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b"];
+
+  return (
+    <div className="space-y-8">
+      {/* Stats Cards */}
+      {orderStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-4 text-white">
+            <p className="text-pink-100 text-sm">Total Revenue</p>
+            <p className="text-2xl font-bold">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-md border border-pink-100">
+            <p className="text-gray-500 text-sm">Total Orders</p>
+            <p className="text-2xl font-bold text-pink-600">{orderStats.total}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-md border border-green-100">
+            <p className="text-gray-500 text-sm">Delivered</p>
+            <p className="text-2xl font-bold text-green-600">{orderStats.delivered}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-md border border-yellow-100">
+            <p className="text-gray-500 text-sm">Pending</p>
+            <p className="text-2xl font-bold text-yellow-600">{orderStats.pending}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Charts Grid */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Revenue (Last 7 Days)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={last7Days}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                formatter={(value) => [`Rs.${value}`, "Revenue"]}
+                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              />
+              <Bar dataKey="revenue" fill="#ec4899" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Order Status Distribution */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Order Status Distribution</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={statusData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {statusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Orders Trend */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Orders Trend (Last 7 Days)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={last7Days}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              />
+              <Line type="monotone" dataKey="orders" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: "#8b5cf6" }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Categories */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Top Selling Categories</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={topCategories} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 12 }} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={100} />
+              <Tooltip 
+                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {topCategories.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={categoryColors[index % categoryColors.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }

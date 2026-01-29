@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
-import { Search, ChevronDown, X } from "lucide-react";
+import SearchSuggestions from "../components/SearchSuggestions";
+import { ChevronDown, X } from "lucide-react";
 
 export default function Shop({ addToCart }) {
   const [products, setProducts] = useState([]);
@@ -74,17 +75,15 @@ export default function Shop({ addToCart }) {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
         {/* Search */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute top-3 left-3 text-pink-400" />
-            <input
-              type="text"
-              placeholder="Search beautiful products..."
-              className="w-full pl-10 pr-4 py-2 rounded-full border border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white shadow-md"
+          <div className="w-full sm:w-96">
+            <SearchSuggestions
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+              onChange={(value) => {
+                setSearch(value);
                 setPage(1);
               }}
+              onSubmit={() => fetchProducts()}
+              placeholder="Search beautiful products..."
             />
           </div>
         </div>

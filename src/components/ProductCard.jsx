@@ -1,10 +1,11 @@
 // src/components/ProductCard.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { ShoppingCart, ArrowRight } from "lucide-react";
+import { ShoppingCart, ArrowRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment-timezone";
+import toast from "react-hot-toast";
 
-const ProductCard = ({ product, addToCart = () => {} }) => {
+const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromWishlist, isInWishlist }) => {
   const [flipped, setFlipped] = useState(false);
   const [imageVisible, setImageVisible] = useState(false);
   const imageRef = useRef(null);
@@ -40,6 +41,20 @@ const ProductCard = ({ product, addToCart = () => {} }) => {
   const showExpiry = isDiscountActive && discountExpiry && discountExpiry > new Date();
   const finalPrice = product?.finalPrice ?? product?.price;
   const averageRating = Number(product?.averageRating || 0).toFixed(1);
+
+  // Check if in wishlist
+  const inWishlist = isInWishlist?.(productId);
+
+  const handleWishlistClick = (e) => {
+    e.stopPropagation();
+    if (inWishlist) {
+      removeFromWishlist?.(productId);
+      toast.success("Removed from wishlist");
+    } else {
+      addToWishlist?.(product);
+      toast.success("Added to wishlist");
+    }
+  };
 
   // Lazy load images using IntersectionObserver
   useEffect(() => {
@@ -112,6 +127,36 @@ const ProductCard = ({ product, addToCart = () => {} }) => {
           <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-yellow-600 shadow flex items-center gap-1">
             ⭐ {averageRating}
           </div>
+          
+          {/* Wishlist Button */}
+          {(addToWishlist || removeFromWishlist) && (
+            <button
+              onClick={handleWishlistClick}
+              className={`absolute top-4 right-16 z-10 w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-all hover:scale-110 ${
+                inWishlist 
+                  ? "bg-red-500 text-white" 
+                  : "bg-white/90 text-gray-400 hover:text-red-500"
+              }`}
+            >
+              <Heart size={18} fill={inWishlist ? "currentColor" : "none"} />
+            </button>
+          )}
+
+          {/* Stock Status Badge */}
+          {product.stock !== undefined && (
+            <div className="absolute bottom-4 left-4 z-10">
+              {product.stockStatus === "out_of_stock" ? (
+                <span className="px-2 py-1 bg-red-500/90 text-white text-xs rounded-full font-medium">
+                  Out of Stock
+                </span>
+              ) : product.stockStatus === "low_stock" ? (
+                <span className="px-2 py-1 bg-yellow-500/90 text-white text-xs rounded-full font-medium">
+                  Only {product.stock} left
+                </span>
+              ) : null}
+            </div>
+          )}
+
           <div className="w-full h-full bg-gray-100" ref={imageRef}>
             {imageVisible && (
               videoUrl ? (

@@ -2,19 +2,22 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment-timezone";
+import toast from "react-hot-toast";
+import { Heart, ZoomIn } from "lucide-react";
 import {
   getProductById,
   getProductReviews,
   saveProductReview,
   deleteProductReview,
 } from "../services/api";
+import ImageZoom from "../components/ImageZoom";
 
 const fallbackImage =
   "https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?cs=srgb&dl=pexels-souvenirpixels-414612.jpg&fm=jpg";
 
 const ratingOptions = [5, 4, 3, 2, 1];
 
-const ProductDetails = ({ addToCart }) => {
+const ProductDetails = ({ addToCart, addToWishlist, removeFromWishlist, isInWishlist }) => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -25,6 +28,8 @@ const ProductDetails = ({ addToCart }) => {
   const [error, setError] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [showZoom, setShowZoom] = useState(false);
+  const inWishlist = isInWishlist?.(productId);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -175,20 +180,93 @@ const ProductDetails = ({ addToCart }) => {
                 {product.promotionBadge}
               </span>
             )}
+
+            {/* Wishlist Button */}
+            {(addToWishlist || removeFromWishlist) && (
+              <button
+                onClick={() => {
+                  if (inWishlist) {
+                    removeFromWishlist?.(productId);
+                    toast.success("Removed from wishlist");
+                  } else {
+                    addToWishlist?.(product);
+                    toast.success("Added to wishlist");
+                  }
+                }}
+                className={`absolute top-6 right-6 z-10 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 ${
+                  inWishlist 
+                    ? "bg-red-500 text-white" 
+                    : "bg-white/90 text-gray-400 hover:text-red-500"
+                }`}
+              >
+                <Heart size={24} fill={inWishlist ? "currentColor" : "none"} />
+              </button>
+            )}
+
+            {/* Zoom Button */}
+            <button
+              onClick={() => setShowZoom(true)}
+              className="absolute bottom-6 right-6 z-10 w-12 h-12 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-pink-600 transition-all hover:scale-110"
+            >
+              <ZoomIn size={24} />
+            </button>
+
+            {/* Stock Status */}
+            {product.stock !== undefined && (
+              <div className="absolute bottom-6 left-6 z-10">
+                {product.stockStatus === "out_of_stock" ? (
+                  <span className="px-4 py-2 bg-red-500 text-white text-sm rounded-full font-semibold">
+                    Out of Stock
+                  </span>
+                ) : product.stockStatus === "low_stock" ? (
+                  <span className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-full font-semibold">
+                    Only {product.stock} left
+                  </span>
+                ) : (
+                  <span className="px-4 py-2 bg-green-500 text-white text-sm rounded-full font-semibold">
+                    In Stock ({product.stock})
+                  </span>
+                )}
+              </div>
+            )}
+
             <img
               src={imageUrl}
               alt={product.name}
-              className="w-full h-full object-contain max-h-[520px] p-6"
+              className="w-full h-full object-contain max-h-[520px] p-6 cursor-zoom-in"
+              onClick={() => setShowZoom(true)}
               onError={(e) => {
                 e.currentTarget.src = fallbackImage;
               }}
             />
             {product.videoUrl && (
-              <div className="absolute bottom-6 right-6 bg-white/80 backdrop-blur px-4 py-2 rounded-xl shadow text-sm text-pink-700">
-                🎬 Product video available in admin preview
+              <div className="absolute top-20 right-6 bg-white/80 backdrop-blur px-4 py-2 rounded-xl shadow text-sm text-pink-700">
+                🎬 Video available
               </div>
             )}
           </div>
+
+          {/* Image Zoom Modal */}
+          {showZoom && (
+            <div 
+              className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+              onClick={() => setShowZoom(false)}
+            >
+              <div className="relative max-w-4xl max-h-[90vh]">
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-contain max-h-[85vh]"
+                />
+                <button
+                  onClick={() => setShowZoom(false)}
+                  className="absolute -top-12 right-0 text-white text-2xl hover:text-pink-400 transition"
+                >
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="p-6 lg:p-10 space-y-6">
             <div>
@@ -263,9 +341,14 @@ const ProductDetails = ({ addToCart }) => {
 
             <button
               onClick={handleAddToCart}
-              className="w-full bg-gradient-to-r from-pink-500 to-rose-400 text-white font-semibold py-3 rounded-xl shadow hover:from-pink-600 hover:to-rose-500 transition"
+              disabled={product.stockStatus === "out_of_stock"}
+              className={`w-full font-semibold py-3 rounded-xl shadow transition ${
+                product.stockStatus === "out_of_stock"
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-pink-500 to-rose-400 text-white hover:from-pink-600 hover:to-rose-500"
+              }`}
             >
-              Add to Cart
+              {product.stockStatus === "out_of_stock" ? "Out of Stock" : "Add to Cart"}
             </button>
 
             <div className="space-y-4">

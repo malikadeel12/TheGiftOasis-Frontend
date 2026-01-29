@@ -1,7 +1,11 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import api from "../services/api"; 
+import api from "../services/api";
+import toast from "react-hot-toast";
+import { LoadingButton } from "../components/LoadingSpinner";
+import { Mail, Lock, ArrowRight } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,124 +27,94 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await api.post("/users/login", formData);
-      alert(res.data.message || "Login Successful!");
-       const token = res.data.token;
-       localStorage.setItem("token", token);
-       window.dispatchEvent(new Event("authChange"));
-       const decoded = jwtDecode(token);
-       if (decoded.role === "admin") navigate("/admin");
-       else navigate("/");
+      toast.success("Login successful!");
+      const token = res.data.token;
+      localStorage.setItem("token", token);
+      window.dispatchEvent(new Event("authChange"));
+      const decoded = jwtDecode(token);
+      if (decoded.role === "admin") navigate("/admin");
+      else navigate("/");
     } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        background:
-          "linear-gradient(rgba(255, 192, 203, 0.85), rgba(255, 182, 193, 0.9)), url('https://i.pinimg.com/736x/15/dc/b9/15dcb94b2b64ef5d95de2f781f325a2c.jpg') center/cover no-repeat",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Poppins', sans-serif",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "30px",
-          borderRadius: "15px",
-          boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
-          width: "100%",
-          maxWidth: "400px",
-        }}
-      >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "20px",
-            color: "#d63384",
-          }}
-        >
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center text-pink-600 mb-2">
           Welcome Back 💖
         </h2>
+        <p className="text-center text-gray-500 mb-8">
+          Sign in to continue to your account
+        </p>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Email
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
             </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400" size={20} />
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-500 focus:outline-none transition"
+                required
+              />
+            </div>
           </div>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400" size={20} />
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-500 focus:outline-none transition"
+                required
+              />
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              backgroundColor: "#d63384",
-              color: "white",
-              padding: "10px",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "16px",
-              transition: "0.3s",
-              opacity: loading ? 0.7 : 1,
-            }}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = "#b02a6f")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.backgroundColor = "#d63384")
-            }
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="accent-pink-500" />
+              <span className="text-gray-600">Remember me</span>
+            </label>
+            <Link to="/forgot-password" className="text-pink-600 hover:text-pink-700 font-medium">
+              Forgot password?
+            </Link>
+          </div>
 
-          <p style={{ textAlign: "center", marginTop: "15px" }}>
-            Don’t have an account?{" "}
-            <a href="/register" style={{ color: "#d63384", fontWeight: "bold" }}>
-              Sign Up
-            </a>
-          </p>
+          <LoadingButton
+            type="submit"
+            loading={loading}
+            loadingText="Signing in..."
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2"
+          >
+            Sign In
+            <ArrowRight size={18} />
+          </LoadingButton>
         </form>
+
+        <p className="text-center text-gray-600 mt-6">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-pink-600 hover:text-pink-700 font-semibold">
+            Create Account
+          </Link>
+        </p>
       </div>
     </div>
   );

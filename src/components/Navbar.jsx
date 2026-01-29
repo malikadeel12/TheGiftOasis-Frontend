@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { UserPlus, LogIn, ShoppingCart } from "lucide-react";
+import { UserPlus, LogIn, ShoppingCart, Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 
-export default function Navbar({ cartItems = [] }) {
+export default function Navbar({ cartItems = [], wishlistCount = 0 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("token"));
   const navigate = useNavigate();
@@ -117,12 +117,27 @@ export default function Navbar({ cartItems = [] }) {
                 </Link>
               </>
             )}
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              className="relative flex items-center gap-1 bg-white text-pink-600 border-2 border-pink-200 px-3 py-1 rounded-full shadow hover:bg-pink-50 transition"
+            >
+              <Heart size={18} />
+              <span className="hidden sm:inline">Wishlist</span>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Cart */}
             <Link
               to="/cart"
               className="relative flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"
             >
               <ShoppingCart size={18} />
-              Cart
+              <span className="hidden sm:inline">Cart</span>
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                   {cartCount}
@@ -223,6 +238,19 @@ export default function Navbar({ cartItems = [] }) {
                 </Link>
               </>
             )}
+            <Link
+              to="/wishlist"
+              className="relative flex items-center gap-1 bg-white text-pink-600 border-2 border-pink-200 px-3 py-1 rounded-full shadow hover:bg-pink-50 transition"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Heart size={18} />
+              Wishlist
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <Link
               to="/cart"
               className="relative flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full shadow hover:bg-pink-600 transition"

@@ -35,8 +35,10 @@ const API = axios.create({
   timeout: 30000, // 30 seconds timeout
 });
 
-// register user
+// Auth endpoints
 export const registerUser = (formData) => API.post("/users/register", formData);
+export const forgotPassword = (email) => API.post("/users/forgot-password", { email });
+export const resetPassword = (token, password) => API.post("/users/reset-password", { token, password });
 
 // Order endpoints
 export const createOrder = (orderData) => API.post("/orders/create", orderData);
