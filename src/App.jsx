@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Breadcrumb from "./components/Breadcrumb";
@@ -20,6 +20,78 @@ import BlogPost from "./pages/BlogPost";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Wishlist from "./pages/Wishlist";
+
+// Wrapper component to handle conditional Navbar/Footer
+function AppContent({ cartItems, wishlist, addToWishlist, removeFromWishlist, isInWishlist, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice }) {
+  const location = useLocation();
+  const isAdminPage = location.pathname === "/admin";
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isAdminPage && <Navbar cartItems={cartItems} wishlistCount={wishlist.length} />}
+      {!isAdminPage && <Breadcrumb />}
+      <main className={`flex-grow ${isAdminPage ? 'p-0' : ''}`}>
+        <Routes>
+          <Route path="/" element={<Home addToCart={addToCart} />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/shop" element={<Shop addToCart={addToCart} />} />
+          <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
+          <Route
+            path="/cart"
+            element={
+              <Cart
+                cartItems={cartItems}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateQuantity}
+              />
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <Wishlist
+                wishlist={wishlist}
+                removeFromWishlist={removeFromWishlist}
+                addToCart={addToCart}
+              />
+            }
+          />
+          <Route
+            path="/my-orders"
+            element={
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage cartItems={cartItems} totalPrice={totalPrice} clearCart={clearCart} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </main>
+      {!isAdminPage && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   // ✅ Load cart from localStorage on initial render
@@ -108,69 +180,18 @@ function App() {
 
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
-        <Navbar cartItems={cartItems} wishlistCount={wishlist.length} />
-        <Breadcrumb />
-        <main className="flex-grow">
-          <Routes>
-        <Route path="/" element={<Home addToCart={addToCart} />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:slug" element={<BlogPost />} />
-        <Route path="/shop" element={<Shop addToCart={addToCart} />} />
-        <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
-        <Route
-          path="/cart"
-          element={
-            <Cart
-              cartItems={cartItems}
-              removeFromCart={removeFromCart}
-              updateQuantity={updateQuantity}
-            />
-          }
-        />
-        <Route
-          path="/wishlist"
-          element={
-            <Wishlist
-              wishlist={wishlist}
-              removeFromWishlist={removeFromWishlist}
-              addToCart={addToCart}
-            />
-          }
-        />
-        <Route
-          path="/my-orders"
-          element={
-            <ProtectedRoute>
-              <MyOrders />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <ProtectedRoute>
-              <CheckoutPage cartItems={cartItems} totalPrice={totalPrice} clearCart={clearCart} />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/order-success" element={<OrderSuccess />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin={true}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppContent 
+        cartItems={cartItems}
+        wishlist={wishlist}
+        addToWishlist={addToWishlist}
+        removeFromWishlist={removeFromWishlist}
+        isInWishlist={isInWishlist}
+        addToCart={addToCart}
+        removeFromCart={removeFromCart}
+        updateQuantity={updateQuantity}
+        clearCart={clearCart}
+        totalPrice={totalPrice}
+      />
     </Router>
   );
 }

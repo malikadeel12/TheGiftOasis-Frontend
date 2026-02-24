@@ -521,7 +521,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
         {/* Header - Fixed */}
-        <header className="bg-white border-b border-slate-200 fixed top-0 right-0 z-30 h-20 transition-all duration-300" style={{ left: sidebarOpen ? '16rem' : '5rem' }}>
+        <header className="bg-white border-b border-slate-200 fixed top-0 right-0 z-50 h-20 transition-all duration-300" style={{ left: sidebarOpen ? '16rem' : '5rem' }}>
           <div className="px-8 py-4 flex items-center justify-between h-full">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
