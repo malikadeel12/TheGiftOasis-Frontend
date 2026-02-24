@@ -94,7 +94,7 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
 
   return (
     <div
-      className="w-full max-w-[288px] mx-auto h-96 cursor-pointer group"
+      className="w-[260px] sm:w-full max-w-[288px] mx-auto h-80 sm:h-96 cursor-pointer group flex-shrink-0"
       style={{ perspective: "1200px" }}
       onClick={() => setFlipped(!flipped)}
     >
@@ -111,20 +111,20 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
           style={{ transform: "rotateY(0deg)", backfaceVisibility: "hidden" }}
         >
           {(product?.isFeatured || product?.promotionBadge) && (
-            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+            <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-10 flex flex-wrap gap-1 sm:gap-2">
               {product?.isFeatured && (
-                <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                  ⭐ Featured
+                <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full shadow">
+                  ⭐ <span className="hidden sm:inline">Featured</span>
                 </span>
               )}
               {product?.promotionBadge && (
-                <span className="bg-amber-200 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                <span className="bg-amber-200 text-amber-800 text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full shadow">
                   {product.promotionBadge}
                 </span>
               )}
             </div>
           )}
-          <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-yellow-600 shadow flex items-center gap-1">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/80 backdrop-blur px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold text-yellow-600 shadow flex items-center gap-1">
             ⭐ {averageRating}
           </div>
           
@@ -132,25 +132,25 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
           {(addToWishlist || removeFromWishlist) && (
             <button
               onClick={handleWishlistClick}
-              className={`absolute top-4 right-16 z-10 w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-all hover:scale-110 ${
+              className={`absolute top-2 sm:top-4 right-12 sm:right-16 z-10 w-8 sm:w-9 h-8 sm:h-9 rounded-full shadow-md flex items-center justify-center transition-all hover:scale-110 ${
                 inWishlist 
                   ? "bg-red-500 text-white" 
                   : "bg-white/90 text-gray-400 hover:text-red-500"
               }`}
             >
-              <Heart size={18} fill={inWishlist ? "currentColor" : "none"} />
+              <Heart size={16} fill={inWishlist ? "currentColor" : "none"} />
             </button>
           )}
 
           {/* Stock Status Badge */}
           {product.stock !== undefined && (
-            <div className="absolute bottom-4 left-4 z-10">
+            <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 z-10">
               {product.stockStatus === "out_of_stock" ? (
-                <span className="px-2 py-1 bg-red-500/90 text-white text-xs rounded-full font-medium">
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-500/90 text-white text-[10px] sm:text-xs rounded-full font-medium">
                   Out of Stock
                 </span>
               ) : product.stockStatus === "low_stock" ? (
-                <span className="px-2 py-1 bg-yellow-500/90 text-white text-xs rounded-full font-medium">
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-yellow-500/90 text-white text-[10px] sm:text-xs rounded-full font-medium">
                   Only {product.stock} left
                 </span>
               ) : null}
@@ -184,20 +184,20 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
           </div>
 
           {isDiscountActive && (
-            <div className="absolute top-0 right-4 flex flex-col items-center select-none">
+            <div className="absolute top-0 right-2 sm:right-4 flex flex-col items-center select-none">
               {/* High-tier badge above the tag */}
               {discountPercentage >= 40 && (
-                <div className="mb-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300 shadow-sm">
-                  Deal of the Day
+                <div className="mb-0.5 sm:mb-1 text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300 shadow-sm">
+                  Deal
                 </div>
               )}
               {/* string */}
-              <div className="w-0.5 h-6 bg-gray-300/80" />
+              <div className="w-0.5 h-4 sm:h-6 bg-gray-300/80" />
               {/* tag */}
-              <div className="relative -mt-1 rotate-6 swing-on-hover" aria-label={`${discountPercentage}% discount tag`}>
+              <div className="relative -mt-0.5 sm:-mt-1 rotate-6 swing-on-hover" aria-label={`${discountPercentage}% discount tag`}>
                 {/* hole */}
-                <div className="absolute -top-1 left-2 w-2 h-2 bg-white rounded-full shadow-inner" />
-                <div className={`bg-gradient-to-br ${discountTag.theme} text-white ${discountTag.size} font-semibold rounded-md shadow-lg tracking-wide border border-white/20`}
+                <div className="absolute -top-1 left-1.5 sm:left-2 w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white rounded-full shadow-inner" />
+                <div className={`bg-gradient-to-br ${discountTag.theme} text-white text-[9px] sm:${discountTag.size} font-semibold rounded-md shadow-lg tracking-wide border border-white/20`}
                 >
                   {discountTag.label}
                 </div>
@@ -208,25 +208,25 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
 
         {/* BACK */}
         <div
-          className="absolute w-full h-full rounded-2xl shadow-2xl bg-gradient-to-br from-white/60 to-gray-100/60 backdrop-blur-lg border border-white/40 p-5 flex flex-col justify-between"
+          className="absolute w-full h-full rounded-2xl shadow-2xl bg-gradient-to-br from-white/60 to-gray-100/60 backdrop-blur-lg border border-white/40 p-3 sm:p-5 flex flex-col justify-between"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
         >
           <div className="flex-1 overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-800">{product?.name}</h3>
-            <div className="w-12 h-1 bg-pink-500 rounded-full mt-2 mb-3"></div>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800 line-clamp-1">{product?.name}</h3>
+            <div className="w-8 sm:w-12 h-1 bg-pink-500 rounded-full mt-1 sm:mt-2 mb-2 sm:mb-3"></div>
 
-            <p className="text-sm text-gray-700">
+            <p className="text-xs sm:text-sm text-gray-700 line-clamp-2 sm:line-clamp-3">
               {product?.description || "No description available"}
             </p>
 
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2 sm:mt-3">
               {product?.category && (
-                <span className="text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full">
+                <span className="text-[10px] sm:text-xs bg-pink-100 text-pink-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                   {product.category}
                 </span>
               )}
               {product?.brand && (
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
+                <span className="text-[10px] sm:text-xs bg-purple-100 text-purple-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                   {product.brand}
                 </span>
               )}
@@ -234,19 +234,19 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
           </div>
 
           {/* Price Section */}
-          <div className="mt-4 flex items-center justify-between bg-white/80 px-3 py-2 rounded-xl shadow-inner">
+          <div className="mt-2 sm:mt-4 flex items-center justify-between bg-white/80 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shadow-inner">
             <div>
               {isDiscountActive ? (
                 <>
-                  <span className="text-xl font-bold text-pink-600">
+                  <span className="text-base sm:text-xl font-bold text-pink-600">
                     Rs.{finalPrice?.toFixed(2) || "0.00"}
                   </span>
-                  <span className="ml-2 text-sm text-gray-400 line-through">
+                  <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-400 line-through">
                     Rs.{product?.price?.toFixed(2) || "0.00"}
                   </span>
                 </>
               ) : (
-                <span className="text-xl font-bold text-pink-600">
+                <span className="text-base sm:text-xl font-bold text-pink-600">
                   Rs.{product?.price?.toFixed(2) || "0.00"}
                 </span>
               )}
@@ -257,22 +257,22 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
                 e.stopPropagation();
                 addToCart({ ...product, _id: productId });
               }}
-              className="flex items-center gap-1 bg-pink-500 hover:bg-pink-600 text-white text-sm px-3 py-1 rounded-lg shadow"
+              className="flex items-center gap-1 bg-pink-500 hover:bg-pink-600 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg shadow"
             >
-              <ShoppingCart size={16} /> Add
+              <ShoppingCart size={14} /> <span className="hidden sm:inline">Add</span>
             </button>
           </div>
 
           {(product?.bundleItems?.length > 0 || product?.promoCode) && (
-            <div className="mt-3 space-y-2">
+            <div className="mt-2 sm:mt-3 space-y-1 sm:space-y-2">
               {product?.bundleItems?.length > 0 && (
-                <div className="bg-purple-50 text-purple-700 text-xs rounded-lg px-3 py-2 shadow-inner">
+                <div className="bg-purple-50 text-purple-700 text-[10px] sm:text-xs rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 shadow-inner">
                   Bundle: {product.bundleItems.slice(0, 2).join(", ")}
                   {product.bundleItems.length > 2 && " + more"}
                 </div>
               )}
               {product?.promoCode && (
-                <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-2 shadow-inner">
+                <div className="bg-amber-50 text-amber-700 text-[10px] sm:text-xs rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 shadow-inner">
                   Use code <span className="font-semibold uppercase tracking-wide">{product.promoCode}</span>
                 </div>
               )}
@@ -284,17 +284,17 @@ const ProductCard = ({ product, addToCart = () => {}, addToWishlist, removeFromW
               e.stopPropagation();
               navigate(`/products/${productId}`);
             }}
-            className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
+            className="mt-2 sm:mt-4 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold text-pink-600 hover:text-pink-700"
           >
-            View Details <ArrowRight size={16} />
+            View Details <ArrowRight size={14} />
           </button>
 
           {/* Discount Expiry */}
           {showExpiry && (
-            <div className="mt-3 text-center">
-              <span className="inline-block bg-red-100 text-red-600 text-xs font-medium px-3 py-1 rounded-full">
+            <div className="mt-2 sm:mt-3 text-center">
+              <span className="inline-block bg-red-100 text-red-600 text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                 Deal ends:{" "}
-                {moment.utc(discountExpiry).tz("Asia/Karachi").format("YYYY-MM-DD hh:mm A")}
+                {moment.utc(discountExpiry).tz("Asia/Karachi").format("MMM DD hh:mm A")}
               </span>
             </div>
           )}

@@ -46,19 +46,19 @@ export default function Home({ addToCart = () => {} }) {
     const renderHighlightSection = (title, products, emoji) => {
         if (!products || products.length === 0) return null;
         return (
-            <section className="max-w-7xl mx-auto px-6 lg:px-12 py-14">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-14">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2 sm:gap-3">
                         <span>{emoji}</span> {title}
                     </h2>
                     <a
                         href="/shop"
-                        className="text-pink-600 hover:text-pink-700 text-sm font-semibold"
+                        className="text-pink-600 hover:text-pink-700 text-xs sm:text-sm font-semibold"
                     >
                         View all
                     </a>
                 </div>
-                <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4">
+                <div className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
                     {products.map((product) => (
                         <ProductCard
                             key={product._id}
@@ -76,46 +76,46 @@ export default function Home({ addToCart = () => {} }) {
 
             {/* Hero Section */}
             <section className="relative bg-pink-50 rounded-b-3xl overflow-hidden">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 grid md:grid-cols-2 gap-10 items-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 md:py-16 grid md:grid-cols-2 gap-6 md:gap-10 items-center">
                     
                     {/* Left Content */}
-                    <div className="flex flex-col justify-center">
-                        <h1 className="text-4xl md:text-5xl font-bold text-pink-900 mb-4">
+                    <div className="flex flex-col justify-center order-2 md:order-1">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-pink-900 mb-3 sm:mb-4">
                             Welcome to <span className="text-pink-600">thegiftoasis_</span>
                         </h1>
-                        <h2 className="text-2xl font-semibold text-pink-800 mb-3">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-pink-800 mb-2 sm:mb-3">
                             Your One-Stop Destination for Customized Gifts 💝
                         </h2>
-                        <p className="text-gray-700 text-lg mb-6 leading-relaxed">
+                        <p className="text-gray-700 text-sm sm:text-base md:text-lg mb-4 sm:mb-6 leading-relaxed">
                             From birthdays to anniversaries, from little surprises to big celebrations — 
                             we create gifts that fit your style and your budget.
                         </p>
                         <a
                             href="/shop"
-                            className="inline-block bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-full font-semibold transition duration-300 shadow-md hover:shadow-lg w-fit"
+                            className="inline-block bg-pink-600 hover:bg-pink-700 text-white px-5 sm:px-6 py-2 rounded-full font-semibold transition duration-300 shadow-md hover:shadow-lg w-fit"
                         >
                             Shop Now
                         </a>
                     </div>
 
                     {/* Right Image */}
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center order-1 md:order-2">
                         <img
                             src={LogoImage}
                             alt="Celebration Gifts"
-                            className="w-full max-w-sm object-contain rounded-2xl shadow-md"
+                            className="w-full max-w-[200px] sm:max-w-sm object-contain rounded-2xl shadow-md"
                         />
                     </div>
                 </div>
             </section>
 
             {/* Highlights */}
-            <section className="bg-white py-12">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
+            <section className="bg-white py-8 sm:py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 text-center">
                         Curated Picks for Every Shopper
                     </h2>
-                    <p className="text-center text-gray-600 mt-2">
+                    <p className="text-center text-gray-600 mt-2 text-sm sm:text-base">
                         Discover what&apos;s trending, newly added, and most loved by our community.
                     </p>
                     {highlightError && (
@@ -124,13 +124,13 @@ export default function Home({ addToCart = () => {} }) {
                         </div>
                     )}
                     {loadingHighlights ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-10">
                             {Array(4)
                                 .fill(0)
                                 .map((_, idx) => (
                                     <div
                                         key={`highlight-skeleton-${idx}`}
-                                        className="h-80 bg-pink-100/60 rounded-2xl animate-pulse"
+                                        className="h-64 sm:h-80 bg-pink-100/60 rounded-2xl animate-pulse"
                                     />
                                 ))}
                         </div>
@@ -146,91 +146,91 @@ export default function Home({ addToCart = () => {} }) {
             </section>
 
             {/* About Us */}
-            <section className="max-w-6xl mx-auto px-6 lg:px-12 py-20 text-center">
-                <h2 className="text-3xl font-bold text-gray-800 mb-6">About Us</h2>
-                <p className="text-gray-600 text-lg max-w-3xl mx-auto mb-12">
-                    At thegiftoasis, we believe every gift tells a story. That’s why we design
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-20 text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">About Us</h2>
+                <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-3xl mx-auto mb-8 sm:mb-12">
+                    At thegiftoasis, we believe every gift tells a story. That's why we design
                     personalized and budget-friendly gifts that speak from the heart. Whether you
                     want a chic ribbon bouquet, a luxury hamper, or a simple customized surprise,
-                    we’ve got you covered.
+                    we've got you covered.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
                     <div className="flex items-start gap-3">
-                        <FaCheckCircle className="text-pink-500 text-2xl mt-1" />
-                        <p className="text-gray-700 text-lg">Customized gifts in your budget</p>
+                        <FaCheckCircle className="text-pink-500 text-xl sm:text-2xl mt-0.5" />
+                        <p className="text-gray-700 text-sm sm:text-base md:text-lg">Customized gifts in your budget</p>
                     </div>
                     <div className="flex items-start gap-3">
-                        <FaGift className="text-pink-500 text-2xl mt-1" />
-                        <p className="text-gray-700 text-lg">Quality products, wrapped with care</p>
+                        <FaGift className="text-pink-500 text-xl sm:text-2xl mt-0.5" />
+                        <p className="text-gray-700 text-sm sm:text-base md:text-lg">Quality products, wrapped with care</p>
                     </div>
                     <div className="flex items-start gap-3">
-                        <FaTags className="text-pink-500 text-2xl mt-1" />
-                        <p className="text-gray-700 text-lg">Delivery all across Pakistan</p>
+                        <FaTags className="text-pink-500 text-xl sm:text-2xl mt-0.5" />
+                        <p className="text-gray-700 text-sm sm:text-base md:text-lg">Delivery all across Pakistan</p>
                     </div>
                     <div className="flex items-start gap-3">
-                        <FaRegHeart className="text-pink-500 text-2xl mt-1" />
-                        <p className="text-gray-700 text-lg">Free personalized note with every gift</p>
+                        <FaRegHeart className="text-pink-500 text-xl sm:text-2xl mt-0.5" />
+                        <p className="text-gray-700 text-sm sm:text-base md:text-lg">Free personalized note with every gift</p>
                     </div>
                 </div>
             </section>
 
             {/* Our Services */}
-            <section className="bg-gradient-to-r from-pink-50 to-pink-100 py-20 px-6 lg:px-12 rounded-t-3xl shadow-inner">
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Our Services</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-6xl mx-auto">
-                    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <h3 className="text-xl font-semibold mb-3">Customized Hampers</h3>
-                        <p className="text-gray-600">Build your own hamper with chocolates, skincare, candles & more</p>
+            <section className="bg-gradient-to-r from-pink-50 to-pink-100 py-10 sm:py-20 px-4 sm:px-6 lg:px-12 rounded-t-3xl shadow-inner">
+                <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-8 sm:mb-12">Our Services</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-10 max-w-6xl mx-auto">
+                    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Customized Hampers</h3>
+                        <p className="text-gray-600 text-sm sm:text-base">Build your own hamper with chocolates, skincare, candles & more</p>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <h3 className="text-xl font-semibold mb-3">Budget-Friendly Surprises</h3>
-                        <p className="text-gray-600">Tell us your budget, we’ll create the magic</p>
+                    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Budget-Friendly Surprises</h3>
+                        <p className="text-gray-600 text-sm sm:text-base">Tell us your budget, we'll create the magic</p>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <h3 className="text-xl font-semibold mb-3">Occasion-Based Gifts</h3>
-                        <p className="text-gray-600">Birthday 🎉 | Anniversary 💍 | Baby Shower 👶 | Just Because 💌</p>
+                    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Occasion-Based Gifts</h3>
+                        <p className="text-gray-600 text-sm sm:text-base">Birthday 🎉 | Anniversary 💍 | Baby Shower 👶 | Just Because 💌</p>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <h3 className="text-xl font-semibold mb-3">Special Add-ons</h3>
-                        <p className="text-gray-600">Personalized name tags, greeting cards & photos</p>
+                    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Special Add-ons</h3>
+                        <p className="text-gray-600 text-sm sm:text-base">Personalized name tags, greeting cards & photos</p>
                     </div>
                 </div>
             </section>
 
             {/* How to Order / Order Policy */}
-            <section className="py-20 px-6 lg:px-12 bg-white">
+            <section className="py-10 sm:py-20 px-4 sm:px-6 lg:px-12 bg-white">
                 <div className="max-w-5xl mx-auto text-center">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-6">How to Order</h2>
-                    <p className="text-gray-600 text-lg mb-12">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">How to Order</h2>
+                    <p className="text-gray-600 text-sm sm:text-base md:text-lg mb-8 sm:mb-12">
                         We believe in transparent pricing ✨ Product prices are fixed; delivery charges vary by location and are calculated separately.
                     </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        <div className="bg-pink-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-                            <h3 className="font-semibold text-lg mb-3 text-pink-600">Step 1</h3>
-                            <p className="text-gray-700">Select your product from our shop.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 text-left">
+                        <div className="bg-pink-50 p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <h3 className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 text-pink-600">Step 1</h3>
+                            <p className="text-gray-700 text-sm sm:text-base">Select your product from our shop.</p>
                         </div>
-                        <div className="bg-pink-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-                            <h3 className="font-semibold text-lg mb-3 text-pink-600">Step 2</h3>
-                            <p className="text-gray-700">Make payment (product price only).</p>
+                        <div className="bg-pink-50 p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <h3 className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 text-pink-600">Step 2</h3>
+                            <p className="text-gray-700 text-sm sm:text-base">Make payment (product price only).</p>
                         </div>
-                        <div className="bg-pink-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-                            <h3 className="font-semibold text-lg mb-3 text-pink-600">Step 3</h3>
-                            <p className="text-gray-700">
+                        <div className="bg-pink-50 p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <h3 className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 text-pink-600">Step 3</h3>
+                            <p className="text-gray-700 text-sm sm:text-base">
                                 Send us your <strong>Name</strong>, <strong>Address</strong>, <strong>Contact Number</strong>, and <strong>Payment Screenshot</strong> on WhatsApp.
                             </p>
                         </div>
-                        <div className="bg-pink-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-                            <h3 className="font-semibold text-lg mb-3 text-pink-600">Step 4</h3>
-                            <p className="text-gray-700">
+                        <div className="bg-pink-50 p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <h3 className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 text-pink-600">Step 4</h3>
+                            <p className="text-gray-700 text-sm sm:text-base">
                                 Delivery charges will be calculated separately and confirmed before dispatch.
                             </p>
                         </div>
                     </div>
 
-                    <div className="mt-12 bg-gradient-to-r from-pink-100 to-pink-200 py-6 px-6 rounded-2xl shadow-inner">
-                        <p className="text-pink-800 font-medium text-lg">
+                    <div className="mt-8 sm:mt-12 bg-gradient-to-r from-pink-100 to-pink-200 py-4 sm:py-6 px-4 sm:px-6 rounded-2xl shadow-inner">
+                        <p className="text-pink-800 font-medium text-sm sm:text-base md:text-lg">
                             Kindly note: Payment confirmation + delivery charges must be cleared before order dispatch 🚚
                         </p>
                     </div>
