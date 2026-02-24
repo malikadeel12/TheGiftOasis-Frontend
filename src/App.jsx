@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Breadcrumb from "./components/Breadcrumb";
@@ -177,20 +177,18 @@ function App() {
   );
 
   return (
-    <Router>
-      <AppContent 
-        cartItems={cartItems}
-        wishlist={wishlist}
-        addToWishlist={addToWishlist}
-        removeFromWishlist={removeFromWishlist}
-        isInWishlist={isInWishlist}
-        addToCart={addToCart}
-        removeFromCart={removeFromCart}
-        updateQuantity={updateQuantity}
-        clearCart={clearCart}
-        totalPrice={totalPrice}
-      />
-    </Router>
+    <AppContent 
+      cartItems={cartItems}
+      wishlist={wishlist}
+      addToWishlist={addToWishlist}
+      removeFromWishlist={removeFromWishlist}
+      isInWishlist={isInWishlist}
+      addToCart={addToCart}
+      removeFromCart={removeFromCart}
+      updateQuantity={updateQuantity}
+      clearCart={clearCart}
+      totalPrice={totalPrice}
+    />
   );
 }
 
