@@ -746,49 +746,52 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Toolbar */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 flex-1">
-          <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        {/* Search and Add Button Row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm sm:text-base"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-            {filters.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
-                  filter === f.id
-                    ? "bg-slate-800 text-white"
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={onAdd}
+            className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition whitespace-nowrap"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Product</span>
+            <span className="sm:hidden">Add</span>
+          </button>
         </div>
-        <button
-          onClick={onAdd}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">Add Product</span>
-          <span className="sm:hidden">Add</span>
-        </button>
+        
+        {/* Filter Buttons Row */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+                filter === f.id
+                  ? "bg-slate-800 text-white"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Products Grid */}
       {products.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} onEdit={onEdit} onDelete={onDelete} />
           ))}
@@ -837,59 +840,59 @@ function ProductCard({ product, onEdit, onDelete }) {
         )}
         
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-2">
           {product.isFeatured && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-semibold rounded-lg shadow-lg">
-              <Star className="w-3 h-3" />
-              Featured
+            <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] sm:text-xs font-semibold rounded-lg shadow-lg">
+              <Star className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
+              <span className="hidden sm:inline">Featured</span>
             </span>
           )}
           {product.promotionBadge && (
-            <span className="inline-flex items-center px-2.5 py-1 bg-white/90 backdrop-blur text-slate-700 text-xs font-semibold rounded-lg">
-              <Tag className="w-3 h-3 mr-1" />
-              {product.promotionBadge}
+            <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 bg-white/90 backdrop-blur text-slate-700 text-[10px] sm:text-xs font-semibold rounded-lg">
+              <Tag className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
+              <span className="hidden sm:inline">{product.promotionBadge}</span>
             </span>
           )}
         </div>
 
         {/* Stock Badge */}
-        <div className="absolute top-3 right-3">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${stockConfig.bg}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${stockConfig.color} ${product.stockStatus === "low_stock" ? "animate-pulse" : ""}`} />
-            {stockConfig.label}
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+          <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium ${stockConfig.bg}`}>
+            <span className={`w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full ${stockConfig.color} ${product.stockStatus === "low_stock" ? "animate-pulse" : ""}`} />
+            <span className="hidden sm:inline">{stockConfig.label}</span>
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-3 sm:p-5">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-slate-800 line-clamp-1">{product.name}</h3>
+          <h3 className="font-semibold text-slate-800 line-clamp-1 text-sm sm:text-base">{product.name}</h3>
         </div>
         
-        <p className="text-sm text-slate-500 line-clamp-2 mb-3">{product.description}</p>
+        <p className="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-2 sm:mb-3">{product.description}</p>
         
-        <p className="text-xs text-slate-400 mb-4">{product.category}</p>
+        <p className="text-xs text-slate-400 mb-2 sm:mb-4">{product.category}</p>
 
         {/* Price */}
-        <div className="flex items-baseline gap-2 mb-4">
+        <div className="flex items-baseline gap-1 sm:gap-2 mb-2 sm:mb-4">
           {product.isDiscountActive && product.discountPercentage > 0 ? (
             <>
-              <span className="text-xl font-bold text-slate-800">Rs.{finalPrice.toFixed(2)}</span>
-              <span className="text-sm text-slate-400 line-through">Rs.{product.price}</span>
-              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                {product.discountPercentage}% OFF
+              <span className="text-lg sm:text-xl font-bold text-slate-800">Rs.{finalPrice.toFixed(2)}</span>
+              <span className="text-xs sm:text-sm text-slate-400 line-through">Rs.{product.price}</span>
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 sm:px-2 py-0.5 rounded">
+                {product.discountPercentage}%
               </span>
             </>
           ) : (
-            <span className="text-xl font-bold text-slate-800">Rs.{product.price}</span>
+            <span className="text-lg sm:text-xl font-bold text-slate-800">Rs.{product.price}</span>
           )}
         </div>
 
         {/* Rating & Sales */}
-        <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
           <span className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <Star className="w-3 sm:w-4 h-3 sm:h-4 text-amber-400 fill-amber-400" />
             {avgRating} ({product.ratingCount || 0})
           </span>
           {product.totalSold > 0 && (
@@ -901,14 +904,14 @@ function ProductCard({ product, onEdit, onDelete }) {
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition"
+            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition text-sm"
           >
             <Edit3 className="w-4 h-4" />
-            Edit
+            <span className="hidden sm:inline">Edit</span>
           </button>
           <button
             onClick={() => onDelete(product._id)}
-            className="flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
+            className="flex items-center justify-center px-2 sm:px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -937,28 +940,28 @@ function OrdersTab({
     <div className="space-y-6">
       {/* Stats */}
       {orderStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-            <p className="text-sm text-slate-500 mb-1">Total Orders</p>
-            <p className="text-2xl font-bold text-slate-800">{orderStats.total}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-sm">
+            <p className="text-xs sm:text-sm text-slate-500 mb-1">Total Orders</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-800">{orderStats.total}</p>
           </div>
-          <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
-            <p className="text-sm text-amber-600 mb-1">Pending</p>
-            <p className="text-2xl font-bold text-amber-700">{orderStats.pending}</p>
+          <div className="bg-amber-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-200">
+            <p className="text-xs sm:text-sm text-amber-600 mb-1">Pending</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-700">{orderStats.pending}</p>
           </div>
-          <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
-            <p className="text-sm text-emerald-600 mb-1">Delivered</p>
-            <p className="text-2xl font-bold text-emerald-700">{orderStats.delivered}</p>
+          <div className="bg-emerald-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-emerald-200">
+            <p className="text-xs sm:text-sm text-emerald-600 mb-1">Delivered</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-700">{orderStats.delivered}</p>
           </div>
-          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
-            <p className="text-sm text-blue-600 mb-1">Revenue</p>
-            <p className="text-2xl font-bold text-blue-700">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
+          <div className="bg-blue-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-blue-200">
+            <p className="text-xs sm:text-sm text-blue-600 mb-1">Revenue</p>
+            <p className="text-xl sm:text-2xl font-bold text-blue-700">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
           </div>
         </div>
       )}
 
       {/* Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
         {statuses.map((status) => (
           <button
             key={status}
@@ -977,8 +980,8 @@ function OrdersTab({
         ))}
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Orders Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
@@ -1045,27 +1048,72 @@ function OrdersTab({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Orders Cards - Mobile */}
+      <div className="md:hidden space-y-3 px-0 sm:px-0">
+        {orders.length > 0 ? (
+          orders.map((order) => {
+            const StatusIcon = getStatusIcon(order.status);
+            return (
+              <div key={order._id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+                <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-mono font-medium text-slate-800 text-sm block truncate">{order.orderNumber}</span>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {moment(order.createdAt).tz("Asia/Karachi").format("MMM DD, h:mm A")}
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(order.status)}`}>
+                    <StatusIcon className="w-3 h-3" />
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </span>
+                </div>
+                
+                <div className="mb-2 sm:mb-3">
+                  <p className="font-medium text-slate-800 text-sm truncate">{order.customerInfo.name}</p>
+                  <p className="text-xs text-slate-500">{order.customerInfo.phone}</p>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</span>
+                  <button
+                    onClick={() => onView(order)}
+                    className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+            <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">No orders found</p>
+          </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="py-4 border-t border-slate-200 flex items-center justify-between gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition text-sm"
             >
               <ChevronLeft className="w-4 h-4" />
-              Previous
+              <span className="hidden sm:inline">Previous</span>
             </button>
             <span className="text-sm text-slate-600">
-              Page {page} of {totalPages}
+              {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition text-sm"
             >
-              Next
+              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
