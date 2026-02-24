@@ -296,7 +296,7 @@ export default function AdminDashboard() {
 
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === "") return;
+      if (value === null || value === undefined) return;
 
       if (key === "bundleItemsInput") {
         formData.append("bundleItems", value);
@@ -307,6 +307,15 @@ export default function AdminDashboard() {
         formData.append(key, value ? "true" : "false");
         return;
       }
+
+      // Always send stock and lowStockThreshold (even if empty or 0)
+      if (key === "stock" || key === "lowStockThreshold") {
+        formData.append(key, value === "" ? "0" : String(value));
+        return;
+      }
+
+      // Skip other empty strings
+      if (value === "") return;
 
       formData.append(key, value);
     });
