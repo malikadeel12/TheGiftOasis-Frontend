@@ -8,18 +8,17 @@ export default function Register() {
     e.preventDefault();
 
     const formData = {
-      email: e.target.email.value,
+      email: e.target.email.value.trim(),
       password: e.target.password.value,
-      repeatPassword: e.target.repeatPassword.value,
-      firstName: e.target.firstName.value,
-      lastName: e.target.lastName.value,
-      address: e.target.address.value,
-      country: e.target.country.value,
-      state: e.target.state.value,
-      city: e.target.city.value,
+      firstName: e.target.firstName.value.trim(),
+      lastName: e.target.lastName.value.trim(),
+      address: e.target.address.value.trim(),
+      country: e.target.country.value.trim(),
+      state: e.target.state.value.trim(),
+      city: e.target.city.value.trim(),
       prefix: "+92",
       phone: phone,
-      zip: e.target.zip.value,
+      zip: e.target.zip.value.trim(),
     };
 
     if (!/^\d{10}$/.test(phone)) {
@@ -27,13 +26,20 @@ export default function Register() {
       return;
     }
 
+    // Check password match
+    if (e.target.password.value !== e.target.repeatPassword.value) {
+      alert("Passwords do not match");
+      return;
+    }
+
     try {
       const { data } = await registerUser(formData);
       alert(data.message || "Registration complete!");
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error(error);
-      alert("Something went wrong!");
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || "Registration failed. Please try again.";
+      alert(errorMsg);
     }
   };
 
