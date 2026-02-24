@@ -342,7 +342,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex overflow-x-hidden">
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && isMobile && (
         <div 
@@ -433,7 +433,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-300 ${
+      <main className={`flex-1 flex flex-col transition-all duration-300 overflow-x-hidden ${
         isMobile ? "ml-0" : sidebarOpen ? "ml-64" : "ml-20"
       }`}>
         {/* Header - Fixed */}
@@ -473,7 +473,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto pt-16 lg:pt-20">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-20">
           <div className="p-4 lg:p-8">
           {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
@@ -563,9 +563,9 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 overflow-x-hidden">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard
           title="Total Revenue"
           value={`Rs.${orderStats?.totalRevenue?.toFixed(0) || 0}`}
@@ -601,11 +601,11 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Recent Orders */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800">Recent Orders</h3>
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Recent Orders</h3>
             <button
               onClick={() => onTabChange("orders")}
               className="text-sm text-pink-600 hover:text-pink-700 font-medium"
@@ -616,19 +616,19 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
           <div className="divide-y divide-slate-100">
             {recentOrders.length > 0 ? (
               recentOrders.map((order) => (
-                <div key={order._id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                      <ShoppingBag className="w-5 h-5 text-slate-500" />
+                <div key={order._id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-slate-50 transition gap-2">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-8 sm:w-10 h-8 sm:h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <ShoppingBag className="w-4 sm:w-5 h-4 sm:h-5 text-slate-500" />
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-800">{order.orderNumber}</p>
-                      <p className="text-sm text-slate-500">{order.customerInfo.name}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-800 text-sm truncate">{order.orderNumber}</p>
+                      <p className="text-xs sm:text-sm text-slate-500 truncate">{order.customerInfo.name}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-semibold text-slate-800 text-sm">Rs.{order.totalAmount.toFixed(2)}</p>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       order.status === "delivered" ? "bg-emerald-100 text-emerald-700" :
                       order.status === "pending" ? "bg-amber-100 text-amber-700" :
                       "bg-blue-100 text-blue-700"
@@ -646,8 +646,8 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
 
         {/* Low Stock Alert */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
               <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
               Low Stock Alert
             </h3>
@@ -655,19 +655,19 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
           <div className="divide-y divide-slate-100">
             {lowStockProducts.length > 0 ? (
               lowStockProducts.map((product) => (
-                <div key={product._id} className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div key={product._id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={product.imageUrl || "https://via.placeholder.com/40"}
                       alt={product.name}
-                      className="w-10 h-10 rounded-lg object-cover"
+                      className="w-8 sm:w-10 h-8 sm:h-10 rounded-lg object-cover flex-shrink-0"
                     />
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium text-slate-800 text-sm line-clamp-1">{product.name}</p>
                       <p className="text-xs text-slate-500">{product.category}</p>
                     </div>
                   </div>
-                  <span className="text-amber-600 font-semibold text-sm">{product.stock} left</span>
+                  <span className="text-amber-600 font-semibold text-sm flex-shrink-0">{product.stock} left</span>
                 </div>
               ))
             ) : (
@@ -679,9 +679,9 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
 
       {/* Featured Products Preview */}
       {featuredProducts.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-800">Featured Products</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Featured Products</h3>
             <button
               onClick={() => onTabChange("products")}
               className="text-sm text-pink-600 hover:text-pink-700 font-medium"
@@ -689,18 +689,18 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
               Manage Products
             </button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {featuredProducts.map((product) => (
               <div key={product._id} className="group">
-                <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-3">
+                <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-2 sm:mb-3">
                   <img
                     src={product.imageUrl || "https://via.placeholder.com/200"}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 </div>
-                <p className="font-medium text-slate-800 text-sm line-clamp-1">{product.name}</p>
-                <p className="text-pink-600 font-semibold">Rs.{product.price}</p>
+                <p className="font-medium text-slate-800 text-xs sm:text-sm line-clamp-1">{product.name}</p>
+                <p className="text-pink-600 font-semibold text-sm">Rs.{product.price}</p>
               </div>
             ))}
           </div>
@@ -719,17 +719,17 @@ function StatCard({ title, value, icon: Icon, trend, trendUp, color }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-6">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-slate-500 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-slate-800">{value}</p>
-          <p className={`text-xs mt-2 font-medium ${trendUp ? "text-emerald-600" : "text-amber-600"}`}>
+          <p className="text-xs sm:text-sm text-slate-500 mb-1">{title}</p>
+          <p className="text-lg sm:text-2xl font-bold text-slate-800">{value}</p>
+          <p className={`text-xs mt-1 sm:mt-2 font-medium ${trendUp ? "text-emerald-600" : "text-amber-600"}`}>
             {trend}
           </p>
         </div>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
-          <Icon className="w-6 h-6" />
+        <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
+          <Icon className="w-5 sm:w-6 h-5 sm:h-6" />
         </div>
       </div>
     </div>
@@ -746,7 +746,7 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:gap-4">
         {/* Search and Add Button Row */}
@@ -791,7 +791,7 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
 
       {/* Products Grid */}
       {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 min-w-0">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} onEdit={onEdit} onDelete={onDelete} />
           ))}
@@ -819,7 +819,7 @@ function ProductCard({ product, onEdit, onDelete }) {
   const stockConfig = stockStatusConfig[product.stockStatus] || stockStatusConfig.in_stock;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:shadow-lg transition-all duration-300">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:shadow-lg transition-all duration-300 max-w-full">
       {/* Image */}
       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
         {product.videoUrl ? (
@@ -937,7 +937,7 @@ function OrdersTab({
   const statuses = ["all", "pending", "confirmed", "processing", "dispatched", "delivered", "cancelled"];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Stats */}
       {orderStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
