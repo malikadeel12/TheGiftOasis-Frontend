@@ -519,10 +519,10 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-          <div className="px-8 py-4 flex items-center justify-between">
+      <main className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+        {/* Header - Fixed */}
+        <header className="bg-white border-b border-slate-200 fixed top-0 right-0 z-30 h-20 transition-all duration-300" style={{ left: sidebarOpen ? '16rem' : '5rem' }}>
+          <div className="px-8 py-4 flex items-center justify-between h-full">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
                 {navItems.find((i) => i.id === activeTab)?.label}
@@ -544,8 +544,9 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Content */}
-        <div className="p-8">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto pt-20">
+          <div className="p-8">
           {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <DashboardOverview
@@ -610,6 +611,7 @@ export default function AdminDashboard() {
           {activeTab === "analytics" && (
             <AnalyticsTab orders={orders} orderStats={orderStats} />
           )}
+          </div>
         </div>
       </main>
 
