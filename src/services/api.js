@@ -55,13 +55,7 @@ export const getProductReviews = (id) => API.get(`/admin/${id}/reviews`);
 export const saveProductReview = (id, payload) => API.post(`/admin/${id}/reviews`, payload);
 export const deleteProductReview = (id, reviewId) => API.delete(`/admin/${id}/reviews/${reviewId}`);
 
-// Blog API
-export const getBlogPosts = (params) => API.get("/blog", { params });
-export const getBlogPostBySlug = (slug) => API.get(`/blog/slug/${slug}`);
-export const getAllBlogPostsAdmin = () => API.get("/blog/admin/all");
-export const createBlogPost = (payload) => API.post("/blog", payload);
-export const updateBlogPost = (id, payload) => API.put(`/blog/${id}`, payload);
-export const deleteBlogPost = (id) => API.delete(`/blog/${id}`);
+
 
 // Request interceptor - add token to headers
 API.interceptors.request.use((config) => {

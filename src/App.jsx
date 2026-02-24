@@ -15,8 +15,7 @@ import CheckoutPage from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
 import ProductDetails from "./pages/ProductDetails";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
+
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Wishlist from "./pages/Wishlist";
@@ -37,8 +36,7 @@ function AppContent({ cartItems, wishlist, addToWishlist, removeFromWishlist, is
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
+
           <Route path="/shop" element={<Shop addToCart={addToCart} />} />
           <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
           <Route

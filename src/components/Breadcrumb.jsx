@@ -19,8 +19,7 @@ export default function Breadcrumb() {
     login: "Login",
     register: "Register",
     admin: "Admin Dashboard",
-    blog: "Blog",
-    "blog-post": "Blog Post",
+
   };
 
   return (

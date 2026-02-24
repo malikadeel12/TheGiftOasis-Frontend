@@ -4,10 +4,6 @@ import api, {
   getAllOrders,
   updateOrderStatus,
   getOrderStats,
-  getAllBlogPostsAdmin,
-  createBlogPost,
-  updateBlogPost,
-  deleteBlogPost,
 } from "../services/api";
 import moment from "moment-timezone";
 import toast from "react-hot-toast";
@@ -31,27 +27,21 @@ import {
   LayoutDashboard,
   Package,
   ShoppingBag,
-  FileText,
   BarChart3,
   Plus,
   Search,
-  Filter,
-  MoreVertical,
   Edit3,
   Trash2,
   Eye,
   X,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   Users,
-  DollarSign,
   CheckCircle,
   Clock,
   Truck,
   Star,
   Tag,
-  Calendar,
   Image as ImageIcon,
   Video,
   Save,
@@ -60,6 +50,24 @@ import {
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Handle mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Products state
   const [data, setData] = useState([]);
@@ -81,13 +89,7 @@ export default function AdminDashboard() {
   const [orderPage, setOrderPage] = useState(1);
   const [totalOrderPages, setTotalOrderPages] = useState(1);
 
-  // Blog state
-  const [blogPosts, setBlogPosts] = useState([]);
-  const [blogForm, setBlogForm] = useState(initialBlogForm());
-  const [blogEditingId, setBlogEditingId] = useState(null);
-  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
-  const [blogLoading, setBlogLoading] = useState(false);
-  const [blogMessage, setBlogMessage] = useState("");
+
 
   function initialForm() {
     return {
@@ -108,20 +110,6 @@ export default function AdminDashboard() {
       bundleItemsInput: "",
       stock: "",
       lowStockThreshold: "5",
-    };
-  }
-
-  function initialBlogForm() {
-    return {
-      title: "",
-      summary: "",
-      content: "",
-      coverImage: "",
-      status: "draft",
-      tagsInput: "",
-      readingMinutes: 3,
-      seoTitle: "",
-      seoDescription: "",
     };
   }
 
@@ -159,26 +147,10 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const fetchBlogPosts = useCallback(async () => {
-    try {
-      setBlogLoading(true);
-      const res = await getAllBlogPostsAdmin();
-      setBlogPosts(res.data.posts || []);
-    } catch (err) {
-      console.error("❌ Fetch blog posts error:", err);
-      setBlogMessage("❌ Failed to load blog posts");
-      setTimeout(() => setBlogMessage(""), 3000);
-      setBlogPosts([]);
-    } finally {
-      setBlogLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     fetchProducts();
     fetchOrders();
     fetchOrderStats();
-    fetchBlogPosts();
   }, []);
 
   useEffect(() => {
@@ -187,10 +159,8 @@ export default function AdminDashboard() {
     } else if (activeTab === "orders") {
       fetchOrders();
       fetchOrderStats();
-    } else if (activeTab === "blog") {
-      fetchBlogPosts();
     }
-  }, [activeTab, fetchOrders, fetchOrderStats, fetchBlogPosts]);
+  }, [activeTab, fetchOrders, fetchOrderStats]);
 
   const handleUpdateOrderStatus = async (orderId, newStatus, notes = "") => {
     try {
@@ -235,90 +205,7 @@ export default function AdminDashboard() {
     setMessage("");
   };
 
-  const handleBlogChange = (e) => {
-    const { name, value } = e.target;
-    setBlogForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
-  const resetBlogForm = () => {
-    setBlogForm(initialBlogForm());
-    setBlogEditingId(null);
-    setIsBlogModalOpen(false);
-    setBlogMessage("");
-  };
-
-  const handleBlogSubmit = async (e) => {
-    e.preventDefault();
-    setBlogLoading(true);
-    setBlogMessage("");
-
-    const payload = {
-      title: blogForm.title,
-      summary: blogForm.summary,
-      content: blogForm.content,
-      coverImage: blogForm.coverImage,
-      status: blogForm.status,
-      readingMinutes: Number(blogForm.readingMinutes) || 3,
-      seoTitle: blogForm.seoTitle,
-      seoDescription: blogForm.seoDescription,
-      tags:
-        blogForm.tagsInput
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean) || [],
-    };
-
-    try {
-      if (blogEditingId) {
-        await updateBlogPost(blogEditingId, payload);
-        setBlogMessage("✅ Blog post updated!");
-      } else {
-        await createBlogPost(payload);
-        setBlogMessage("✅ Blog post created!");
-      }
-      resetBlogForm();
-      fetchBlogPosts();
-    } catch (err) {
-      console.error("❌ Blog submit error:", err);
-      setBlogMessage(err.response?.data?.message || "❌ Failed to save blog post");
-    } finally {
-      setBlogLoading(false);
-      setTimeout(() => setBlogMessage(""), 3000);
-    }
-  };
-
-  const handleBlogEdit = (post) => {
-    setBlogForm({
-      title: post.title || "",
-      summary: post.summary || "",
-      content: post.content || "",
-      coverImage: post.coverImage || "",
-      status: post.status || "draft",
-      tagsInput: Array.isArray(post.tags) ? post.tags.join(", ") : "",
-      readingMinutes: post.readingMinutes || 3,
-      seoTitle: post.seoTitle || "",
-      seoDescription: post.seoDescription || "",
-    });
-    setBlogEditingId(post._id);
-    setIsBlogModalOpen(true);
-  };
-
-  const handleBlogDelete = async (id) => {
-    if (!window.confirm("Delete this blog post?")) return;
-    try {
-      await deleteBlogPost(id);
-      setBlogMessage("🗑️ Blog post deleted");
-      fetchBlogPosts();
-    } catch (err) {
-      console.error("❌ Delete blog error:", err);
-      setBlogMessage(err.response?.data?.message || "❌ Failed to delete blog post");
-    } finally {
-      setTimeout(() => setBlogMessage(""), 3000);
-    }
-  };
 
   const formatDateForInput = (dateStr) => {
     if (!dateStr) return "";
@@ -450,18 +337,31 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "products", label: "Products", icon: Package },
     { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderStats?.pending },
-    { id: "blog", label: "Blog", icon: FileText },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-40`}
+        className={`${
+          isMobile 
+            ? mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            : sidebarOpen ? "w-64" : "w-20"
+        } bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-50 ${
+          isMobile ? "w-64" : ""
+        }`}
       >
         <div className="p-6 flex items-center justify-between">
-          {sidebarOpen && (
+          {(sidebarOpen || isMobile) && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Package className="w-5 h-5 text-white" />
@@ -469,12 +369,22 @@ export default function AdminDashboard() {
               <span className="font-bold text-lg">GiftOasis</span>
             </div>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-slate-800 rounded-lg transition"
-          >
-            {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-slate-800 rounded-lg transition"
+            >
+              {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+            </button>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 hover:bg-slate-800 rounded-lg transition lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 px-4 space-y-2">
@@ -483,7 +393,10 @@ export default function AdminDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   activeTab === item.id
                     ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25"
@@ -491,10 +404,10 @@ export default function AdminDashboard() {
                 }`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && (
+                {(sidebarOpen || isMobile) && (
                   <span className="font-medium flex-1 text-left">{item.label}</span>
                 )}
-                {sidebarOpen && item.badge > 0 && (
+                {(sidebarOpen || isMobile) && item.badge > 0 && (
                   <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                     {item.badge}
                   </span>
@@ -505,8 +418,8 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="p-4 border-t border-slate-800">
-          <div className={`bg-slate-800 rounded-xl p-4 ${sidebarOpen ? "" : "p-2"}`}>
-            {sidebarOpen ? (
+          <div className={`bg-slate-800 rounded-xl p-4 ${(sidebarOpen || isMobile) ? "" : "p-2"}`}>
+            {(sidebarOpen || isMobile) ? (
               <>
                 <p className="text-xs text-slate-400 mb-1">Admin Panel</p>
                 <p className="text-sm font-medium">v2.0.0</p>
@@ -519,34 +432,48 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+      <main className={`flex-1 flex flex-col transition-all duration-300 ${
+        isMobile ? "ml-0" : sidebarOpen ? "ml-64" : "ml-20"
+      }`}>
         {/* Header - Fixed */}
-        <header className="bg-white border-b border-slate-200 fixed top-0 right-0 z-50 h-20 transition-all duration-300" style={{ left: sidebarOpen ? '16rem' : '5rem' }}>
-          <div className="px-8 py-4 flex items-center justify-between h-full">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">
-                {navItems.find((i) => i.id === activeTab)?.label}
-              </h1>
-              <p className="text-sm text-slate-500 mt-0.5">
-                {activeTab === "dashboard" && "Overview of your store performance"}
-                {activeTab === "products" && `Manage ${data.length} products`}
-                {activeTab === "orders" && `${orderStats?.total || 0} total orders`}
-                {activeTab === "blog" && `${blogPosts.length} blog posts`}
-                {activeTab === "analytics" && "Detailed insights and reports"}
-              </p>
+        <header className="bg-white border-b border-slate-200 fixed top-0 right-0 z-40 h-16 lg:h-20 transition-all duration-300" style={{ left: isMobile ? 0 : sidebarOpen ? '16rem' : '5rem' }}>
+          <div className="px-4 lg:px-8 py-3 lg:py-4 flex items-center justify-between h-full">
+            <div className="flex items-center gap-3">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <LayoutDashboard className="w-5 h-5 text-slate-600" />
+              </button>
+              <div>
+                <h1 className="text-lg lg:text-2xl font-bold text-slate-800">
+                  {navItems.find((i) => i.id === activeTab)?.label}
+                </h1>
+                <p className="hidden sm:block text-xs lg:text-sm text-slate-500 mt-0.5">
+                  {activeTab === "dashboard" && "Overview of your store performance"}
+                  {activeTab === "products" && `Manage ${data.length} products`}
+                  {activeTab === "orders" && `${orderStats?.total || 0} total orders`}
+                  {activeTab === "analytics" && "Detailed insights and reports"}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-800">{moment().tz("Asia/Karachi").format("MMMM D, YYYY")}</p>
+            <div className="flex items-center gap-2 lg:gap-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-slate-800">{moment().tz("Asia/Karachi").format("MMM D, YYYY")}</p>
                 <p className="text-xs text-slate-500">{moment().tz("Asia/Karachi").format("h:mm A")}</p>
+              </div>
+              {/* Mobile Date */}
+              <div className="text-right sm:hidden">
+                <p className="text-xs font-medium text-slate-800">{moment().tz("Asia/Karachi").format("MMM D")}</p>
               </div>
             </div>
           </div>
         </header>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto pt-20">
-          <div className="p-8">
+        <div className="flex-1 overflow-y-auto pt-16 lg:pt-20">
+          <div className="p-4 lg:p-8">
           {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <DashboardOverview
@@ -592,21 +519,6 @@ export default function AdminDashboard() {
             />
           )}
 
-          {/* Blog Tab */}
-          {activeTab === "blog" && (
-            <BlogTab
-              posts={blogPosts}
-              loading={blogLoading}
-              onAdd={() => {
-                setBlogEditingId(null);
-                setBlogForm(initialBlogForm());
-                setIsBlogModalOpen(true);
-              }}
-              onEdit={handleBlogEdit}
-              onDelete={handleBlogDelete}
-            />
-          )}
-
           {/* Analytics Tab */}
           {activeTab === "analytics" && (
             <AnalyticsTab orders={orders} orderStats={orderStats} />
@@ -625,17 +537,6 @@ export default function AdminDashboard() {
         loading={loading}
         message={message}
         isEditing={!!editingId}
-      />
-
-      {/* Blog Modal */}
-      <BlogModal
-        isOpen={isBlogModalOpen}
-        onClose={resetBlogForm}
-        form={blogForm}
-        onChange={handleBlogChange}
-        onSubmit={handleBlogSubmit}
-        loading={blogLoading}
-        isEditing={!!blogEditingId}
       />
 
       {/* Order Modal */}
@@ -846,8 +747,8 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
   return (
     <div className="space-y-6">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-4 flex-1">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -858,12 +759,12 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
             {filters.map((f) => (
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
                   filter === f.id
                     ? "bg-slate-800 text-white"
                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
@@ -876,10 +777,11 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
         </div>
         <button
           onClick={onAdd}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
         >
           <Plus className="w-5 h-5" />
-          Add Product
+          <span className="hidden sm:inline">Add Product</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
@@ -1055,7 +957,7 @@ function OrdersTab({
       )}
 
       {/* Filter */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {statuses.map((status) => (
           <button
             key={status}
@@ -1063,7 +965,7 @@ function OrdersTab({
               setStatusFilter(status);
               setPage(1);
             }}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
               statusFilter === status
                 ? "bg-slate-800 text-white"
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
@@ -1168,116 +1070,6 @@ function OrdersTab({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-// ==================== BLOG TAB ====================
-function BlogTab({ posts, loading, onAdd, onEdit, onDelete }) {
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200">
-            <span className="text-sm text-slate-500">Total Posts: </span>
-            <span className="font-semibold text-slate-800">{posts.length}</span>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200">
-            <span className="text-sm text-slate-500">Published: </span>
-            <span className="font-semibold text-emerald-600">
-              {posts.filter((p) => p.status === "published").length}
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={onAdd}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
-        >
-          <Plus className="w-5 h-5" />
-          Create Post
-        </button>
-      </div>
-
-      {/* Blog Grid */}
-      {loading ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-64 bg-white rounded-2xl shadow animate-pulse" />
-          ))}
-        </div>
-      ) : posts.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {posts.map((post) => (
-            <div key={post._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition">
-              {post.coverImage && (
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    post.status === "published"
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-amber-50 text-amber-700 border border-amber-200"
-                  }`}>
-                    {post.status.toUpperCase()}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {moment(post.updatedAt).tz("Asia/Karachi").format("MMM DD, YYYY")}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-1">{post.title}</h3>
-                <p className="text-sm text-slate-500 line-clamp-2 mb-4">{post.summary}</p>
-                {post.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {post.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
-                        #{tag}
-                      </span>
-                    ))}
-                    {post.tags.length > 3 && (
-                      <span className="text-xs text-slate-400">+{post.tags.length - 3}</span>
-                    )}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => onEdit(post)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => onDelete(post._id)}
-                    className="flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500 text-lg">No blog posts yet</p>
-          <p className="text-slate-400 text-sm mb-4">Share your first story with your customers</p>
-          <button
-            onClick={onAdd}
-            className="px-6 py-2 bg-pink-500 text-white rounded-xl font-medium hover:bg-pink-600 transition"
-          >
-            Create First Post
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -1457,11 +1249,11 @@ function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, mess
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <h2 className="text-xl font-semibold text-slate-800">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
             {isEditing ? "Edit Product" : "Add New Product"}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
@@ -1470,7 +1262,7 @@ function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, mess
         </div>
 
         {/* Form */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] p-4 sm:p-6">
           <form id="product-form" onSubmit={onSubmit} className="space-y-6">
             {/* Basic Info */}
             <div className="space-y-4">
@@ -1723,153 +1515,25 @@ function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, mess
   );
 }
 
-function BlogModal({ isOpen, onClose, form, onChange, onSubmit, loading, isEditing }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <h2 className="text-xl font-semibold text-slate-800">
-            {isEditing ? "Edit Blog Post" : "Create Blog Post"}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
-
-        <form onSubmit={onSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-4">
-          <input
-            type="text"
-            name="title"
-            placeholder="Post Title"
-            value={form.title}
-            onChange={onChange}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            required
-          />
-          <textarea
-            name="summary"
-            placeholder="Short summary"
-            value={form.summary}
-            onChange={onChange}
-            rows={3}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
-          />
-          <textarea
-            name="content"
-            placeholder="Story content (supports HTML)"
-            value={form.content}
-            onChange={onChange}
-            rows={8}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent font-mono text-sm resize-none"
-          />
-          <input
-            type="text"
-            name="coverImage"
-            placeholder="Cover image URL (optional)"
-            value={form.coverImage}
-            onChange={onChange}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <select
-              name="status"
-              value={form.status}
-              onChange={onChange}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-            <input
-              type="number"
-              name="readingMinutes"
-              placeholder="Reading time (minutes)"
-              value={form.readingMinutes}
-              onChange={onChange}
-              min={1}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            />
-          </div>
-          <textarea
-            name="tagsInput"
-            placeholder="Tags (comma separated)"
-            value={form.tagsInput}
-            onChange={onChange}
-            rows={2}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="seoTitle"
-              placeholder="SEO Title (optional)"
-              value={form.seoTitle}
-              onChange={onChange}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            />
-            <input
-              type="text"
-              name="seoDescription"
-              placeholder="SEO Description (optional)"
-              value={form.seoDescription}
-              onChange={onChange}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {isEditing ? "Updating..." : "Publishing..."}
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  {isEditing ? "Update Post" : "Publish Post"}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 function OrderModal({ isOpen, onClose, order, onUpdateStatus, loading, getStatusColor }) {
   if (!isOpen || !order) return null;
 
   const statuses = ["confirmed", "processing", "dispatched", "delivered", "cancelled"];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Order Details</h2>
-            <p className="text-sm text-slate-500 font-mono">{order.orderNumber}</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Order Details</h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-mono">{order.orderNumber}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-6">
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Timeline */}
           <OrderTimeline status={order.status} updatedAt={order.updatedAt} />
 

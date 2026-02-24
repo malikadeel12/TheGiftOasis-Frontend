@@ -61,12 +61,7 @@ export default function Footer() {
                   Shop
                 </Link>
               </li>
-              <li>
-                <Link to="/blog" className="text-pink-100 hover:text-white transition flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
-                  Blog
-                </Link>
-              </li>
+
               <li>
                 <Link to="/cart" className="text-pink-100 hover:text-white transition flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>

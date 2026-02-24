@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UserPlus, LogIn, ShoppingCart, Heart } from "lucide-react";
+import { LogIn, ShoppingCart, Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
@@ -52,9 +52,7 @@ export default function Navbar({ cartItems = [], wishlistCount = 0 }) {
             <Link to="/shop" className="text-pink-600 hover:text-pink-800 font-medium">
               Shop
             </Link>
-            <Link to="/blog" className="text-pink-600 hover:text-pink-800 font-medium">
-              Blog
-            </Link>
+
 
             {/* Instagram */}
             <a
@@ -108,13 +106,6 @@ export default function Navbar({ cartItems = [], wishlistCount = 0 }) {
                   <LogIn size={18} />
                   Login
                 </Link>
-                <Link
-                  to="/register"
-                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
-                >
-                  <UserPlus size={18} />
-                  New Account
-                </Link>
               </>
             )}
             {/* Wishlist */}
@@ -167,9 +158,7 @@ export default function Navbar({ cartItems = [], wishlistCount = 0 }) {
           <Link to="/shop" className="block text-pink-600 hover:text-pink-800">
             Shop
           </Link>
-              <Link to="/blog" className="block text-pink-600 hover:text-pink-800">
-                Blog
-              </Link>
+
 
           {/* Instagram */}
           <a
@@ -227,14 +216,6 @@ export default function Navbar({ cartItems = [], wishlistCount = 0 }) {
                 >
                   <LogIn size={18} />
                   Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="flex items-center gap-1 bg-pink-200 text-pink-700 px-3 py-1 rounded-full shadow hover:bg-pink-300 transition"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <UserPlus size={18} />
-                  New Account
                 </Link>
               </>
             )}
