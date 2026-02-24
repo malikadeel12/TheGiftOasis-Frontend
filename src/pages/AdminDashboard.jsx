@@ -45,6 +45,7 @@ import {
   Image as ImageIcon,
   Video,
   Save,
+  DollarSign,
 } from "lucide-react";
 
 export default function AdminDashboard() {
