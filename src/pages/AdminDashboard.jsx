@@ -11,7 +11,6 @@ import api, {
 } from "../services/api";
 import moment from "moment-timezone";
 import toast from "react-hot-toast";
-import { LoadingButton, SkeletonGrid } from "../components/LoadingSpinner";
 import OrderTimeline from "../components/OrderTimeline";
 import {
   BarChart,
@@ -28,10 +27,40 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  FileText,
+  BarChart3,
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  Edit3,
+  Trash2,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  Users,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  Truck,
+  Star,
+  Tag,
+  Calendar,
+  Image as ImageIcon,
+  Video,
+  Save,
+} from "lucide-react";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("products"); // "products" or "orders"
-  
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   // Products state
   const [data, setData] = useState([]);
   const [form, setForm] = useState(initialForm());
@@ -39,6 +68,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [productFilter, setProductFilter] = useState("all");
 
   // Orders state
   const [orders, setOrders] = useState([]);
@@ -49,6 +80,8 @@ export default function AdminDashboard() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderPage, setOrderPage] = useState(1);
   const [totalOrderPages, setTotalOrderPages] = useState(1);
+
+  // Blog state
   const [blogPosts, setBlogPosts] = useState([]);
   const [blogForm, setBlogForm] = useState(initialBlogForm());
   const [blogEditingId, setBlogEditingId] = useState(null);
@@ -142,6 +175,13 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
+    fetchProducts();
+    fetchOrders();
+    fetchOrderStats();
+    fetchBlogPosts();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "products") {
       fetchProducts();
     } else if (activeTab === "orders") {
@@ -152,7 +192,6 @@ export default function AdminDashboard() {
     }
   }, [activeTab, fetchOrders, fetchOrderStats, fetchBlogPosts]);
 
-  // Update Order Status
   const handleUpdateOrderStatus = async (orderId, newStatus, notes = "") => {
     try {
       setOrderLoading(true);
@@ -169,7 +208,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // View Order Details
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
     setIsOrderModalOpen(true);
@@ -282,8 +320,6 @@ export default function AdminDashboard() {
     }
   };
 
-
-  // ✅ Updated: Use moment.tz to format for datetime-local input in Asia/Karachi
   const formatDateForInput = (dateStr) => {
     if (!dateStr) return "";
     return moment.tz(dateStr, "Asia/Karachi").format("YYYY-MM-DDTHH:mm");
@@ -308,13 +344,11 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Always send stock and lowStockThreshold (even if empty or 0)
       if (key === "stock" || key === "lowStockThreshold") {
         formData.append(key, value === "" ? "0" : String(value));
         return;
       }
 
-      // Skip other empty strings
       if (value === "") return;
 
       formData.append(key, value);
@@ -322,12 +356,12 @@ export default function AdminDashboard() {
 
     try {
       if (editingId) {
-        const res = await api.put(`/admin/update-product/${editingId}`, formData, {
+        await api.put(`/admin/update-product/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product updated successfully!");
       } else {
-        const res = await api.post("/admin/add-product", formData, {
+        await api.post("/admin/add-product", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setMessage("✅ Product added successfully!");
@@ -370,7 +404,7 @@ export default function AdminDashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      const res = await api.delete(`/admin/delete-product/${id}`);
+      await api.delete(`/admin/delete-product/${id}`);
       setMessage("🗑 Product deleted successfully!");
       fetchProducts();
     } catch (err) {
@@ -380,939 +414,391 @@ export default function AdminDashboard() {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: "bg-yellow-100 text-yellow-800",
-      confirmed: "bg-blue-100 text-blue-800",
-      processing: "bg-purple-100 text-purple-800",
-      dispatched: "bg-indigo-100 text-indigo-800",
-      delivered: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
+      pending: "bg-amber-100 text-amber-700 border-amber-200",
+      confirmed: "bg-blue-100 text-blue-700 border-blue-200",
+      processing: "bg-purple-100 text-purple-700 border-purple-200",
+      dispatched: "bg-indigo-100 text-indigo-700 border-indigo-200",
+      delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      cancelled: "bg-red-100 text-red-700 border-red-200",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-gray-100 text-gray-700 border-gray-200";
   };
 
+  const getStatusIcon = (status) => {
+    const icons = {
+      pending: Clock,
+      confirmed: CheckCircle,
+      processing: Package,
+      dispatched: Truck,
+      delivered: CheckCircle,
+      cancelled: X,
+    };
+    return icons[status] || Clock;
+  };
+
+  const filteredProducts = data.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      product.category.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesFilter = productFilter === "all" || 
+      (productFilter === "featured" && product.isFeatured) ||
+      (productFilter === "low-stock" && product.stockStatus === "low_stock") ||
+      (productFilter === "out-of-stock" && product.stockStatus === "out_of_stock");
+    return matchesSearch && matchesFilter;
+  });
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "products", label: "Products", icon: Package },
+    { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderStats?.pending },
+    { id: "blog", label: "Blog", icon: FileText },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+  ];
+
   return (
-    <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-pink-100 to-pink-50">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl sm:text-4xl font-extrabold mb-6 text-pink-700 text-center">
-          Admin Dashboard
-        </h1>
-
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6 justify-center">
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <aside
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-40`}
+      >
+        <div className="p-6 flex items-center justify-between">
+          {sidebarOpen && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-bold text-lg">GiftOasis</span>
+            </div>
+          )}
           <button
-            onClick={() => setActiveTab("products")}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === "products"
-                ? "bg-pink-500 text-white shadow-md"
-                : "bg-white text-pink-600 border-2 border-pink-300"
-            }`}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-slate-800 rounded-lg transition"
           >
-            📦 Products
-          </button>
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === "orders"
-                ? "bg-pink-500 text-white shadow-md"
-                : "bg-white text-pink-600 border-2 border-pink-300"
-            }`}
-          >
-            🛍️ Orders
-            {orderStats?.pending > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {orderStats.pending}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("blog")}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === "blog"
-                ? "bg-pink-500 text-white shadow-md"
-                : "bg-white text-pink-600 border-2 border-pink-300"
-            }`}
-          >
-            📝 Blog
-          </button>
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === "analytics"
-                ? "bg-pink-500 text-white shadow-md"
-                : "bg-white text-pink-600 border-2 border-pink-300"
-            }`}
-          >
-            📊 Analytics
+            {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
           </button>
         </div>
 
-        {message && (
-          <div className={`mb-4 p-3 rounded-lg text-center ${message.includes("✅") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {message}
-          </div>
-        )}
-        {blogMessage && activeTab === "blog" && (
-          <div className={`mb-4 p-3 rounded-lg text-center ${blogMessage.includes("✅") || blogMessage.includes("🗑️") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {blogMessage}
-          </div>
-        )}
-
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <>
-            <div className="text-center mb-8">
+        <nav className="flex-1 px-4 space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
               <button
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(initialForm());
-                  setIsModalOpen(true);
-                }}
-                className="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md"
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  activeTab === item.id
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                }`}
               >
-                ➕ Add New Product
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {sidebarOpen && (
+                  <span className="font-medium flex-1 text-left">{item.label}</span>
+                )}
+                {sidebarOpen && item.badge > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </button>
-            </div>
+            );
+          })}
+        </nav>
 
-            {data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {data.map((product) => {
-              const finalPrice = product.finalPrice ?? product.price;
-              const avgRating = Number(product.averageRating || 0).toFixed(1);
-
-              return (
-                <div key={product._id} className="bg-white rounded-xl shadow-md overflow-hidden relative">
-                  {(product.isFeatured || product.promotionBadge) && (
-                    <div className="absolute top-4 left-4 z-10">
-                      {product.isFeatured && (
-                        <span className="inline-block bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                          ⭐ Featured
-                        </span>
-                      )}
-                      {product.promotionBadge && (
-                        <span className="ml-2 inline-block bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
-                          {product.promotionBadge}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {product.videoUrl ? (
-                    <video
-                      src={product.videoUrl}
-                      className="w-full h-64 object-contain bg-black"
-                      controls
-                      playsInline
-                      preload="metadata"
-                      poster={product.imageUrl || undefined}
-                    />
-                  ) : (
-                    <img
-                      src={product.imageUrl || "https://via.placeholder.com/300"}
-                      alt={product.name}
-                      className="w-full h-64 object-contain p-2"
-                    />
-                  )}
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold text-pink-700">{product.name}</h3>
-                    <p className="text-gray-600 text-sm mb-2">{product.description}</p>
-
-                    {product.isDiscountActive && product.discountPercentage > 0 ? (
-                      <>
-                        <p className="text-gray-500 line-through">₨ {product.price}</p>
-                        <p className="text-pink-500 font-semibold">
-                          ₨ {finalPrice.toFixed(2)}{" "}
-                          <span className="text-xs text-green-600">
-                            ({product.discountPercentage}% OFF)
-                          </span>
-                        </p>
-                        {product.discountExpiry && (
-                          <span className="text-xs text-red-500 block mb-2">
-                            Deal ends:{" "}
-                            {moment.utc(product.discountExpiry)
-                              .tz("Asia/Karachi")
-                              .format("YYYY-MM-DD hh:mm A")}
-
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-pink-500 font-semibold">₨ {product.price}</p>
-                    )}
-
-                    <span className="text-xs text-gray-500 block mb-1">
-                      Category: {product.category}
-                    </span>
-
-                    {/* Stock Status */}
-                    {product.stock !== undefined && (
-                      <div className="mb-3">
-                        {product.stockStatus === "out_of_stock" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                            Out of Stock
-                          </span>
-                        ) : product.stockStatus === "low_stock" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
-                            Low Stock ({product.stock} left)
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                            In Stock ({product.stock})
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                      <span>Rating: ⭐ {avgRating} ({product.ratingCount || 0})</span>
-                      {product.totalSold !== undefined && (
-                        <span className="text-green-600 font-medium">
-                          Sold: {product.totalSold}
-                        </span>
-                      )}
-                    </div>
-
-                    {(product.bundleItems?.length > 0 || product.promoCode) && (
-                      <div className="bg-pink-50 border border-pink-100 rounded-lg p-3 mb-3 text-sm text-gray-700 space-y-2">
-                        {product.bundleItems?.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-pink-600 mb-1">Bundle Includes:</p>
-                            <ul className="list-disc list-inside space-y-1 text-gray-600">
-                              {product.bundleItems.map((item, idx) => (
-                                <li key={`${product._id}-bundle-${idx}`}>{item}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {product.promoCode && (
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <span className="font-semibold text-purple-600">
-                              Promo Code: <span className="tracking-wide uppercase">{product.promoCode}</span>
-                            </span>
-                            {product.promoExpiresAt && (
-                              <span className="text-xs text-gray-500">
-                                Expires:{" "}
-                                {moment(product.promoExpiresAt)
-                                  .tz("Asia/Karachi")
-                                  .format("YYYY-MM-DD hh:mm A")}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {product.promoDescription && (
-                          <p className="text-xs text-gray-500 italic">{product.promoDescription}</p>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded-lg text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="p-4 border-t border-slate-800">
+          <div className={`bg-slate-800 rounded-xl p-4 ${sidebarOpen ? "" : "p-2"}`}>
+            {sidebarOpen ? (
+              <>
+                <p className="text-xs text-slate-400 mb-1">Admin Panel</p>
+                <p className="text-sm font-medium">v2.0.0</p>
+              </>
             ) : (
-              <p className="text-center text-gray-500">No products found</p>
-            )}
-          </>
-        )}
-
-        {/* Blog Tab */}
-        {activeTab === "blog" && (
-          <div>
-            <div className="text-center mb-8">
-              <button
-                onClick={() => {
-                  setBlogEditingId(null);
-                  setBlogForm(initialBlogForm());
-                  setIsBlogModalOpen(true);
-                }}
-                className="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md"
-              >
-                ✍️ Create Blog Post
-              </button>
-            </div>
-
-            {blogLoading ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {Array(4)
-                  .fill(0)
-                  .map((_, idx) => (
-                    <div key={idx} className="h-48 bg-white rounded-3xl shadow animate-pulse" />
-                  ))}
-              </div>
-            ) : blogPosts.length === 0 ? (
-              <div className="bg-white border border-pink-100 rounded-3xl px-6 py-10 text-center text-pink-600 shadow">
-                No blog posts yet. Share your first story!
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {blogPosts.map((post) => (
-                  <div key={post._id} className="bg-white rounded-3xl shadow p-6 flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          post.status === "published"
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                        }`}
-                      >
-                        {post.status.toUpperCase()}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {moment(post.updatedAt).tz("Asia/Karachi").format("MMM DD, YYYY")}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-pink-700">{post.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-3">{post.summary}</p>
-                    {post.tags?.length > 0 && (
-                      <div className="flex flex-wrap gap-2 text-xs text-pink-600">
-                        {post.tags.slice(0, 4).map((tag) => (
-                          <span key={tag} className="bg-pink-100 px-2 py-1 rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        onClick={() => handleBlogEdit(post)}
-                        className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded-lg text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleBlogDelete(post._id)}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="w-2 h-2 bg-emerald-500 rounded-full mx-auto" />
             )}
           </div>
-        )}
+        </div>
+      </aside>
 
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <div>
-            {/* Order Statistics */}
-            {orderStats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-lg p-4 shadow-md text-center">
-                  <p className="text-gray-600 text-sm">Total Orders</p>
-                  <p className="text-2xl font-bold text-pink-600">{orderStats.total}</p>
-                </div>
-                <div className="bg-yellow-50 rounded-lg p-4 shadow-md text-center border-2 border-yellow-300">
-                  <p className="text-gray-600 text-sm">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{orderStats.pending}</p>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4 shadow-md text-center border-2 border-green-300">
-                  <p className="text-gray-600 text-sm">Delivered</p>
-                  <p className="text-2xl font-bold text-green-600">{orderStats.delivered}</p>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-4 shadow-md text-center border-2 border-blue-300">
-                  <p className="text-gray-600 text-sm">Revenue</p>
-                  <p className="text-2xl font-bold text-blue-600">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Order Status Filter */}
-            <div className="flex flex-wrap gap-2 mb-6 justify-center">
-              {["all", "pending", "confirmed", "processing", "dispatched", "delivered", "cancelled"].map(
-                (status) => (
-                  <button
-                    key={status}
-                    onClick={() => {
-                      setOrderStatusFilter(status);
-                      setOrderPage(1);
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium transition ${
-                      orderStatusFilter === status
-                        ? "bg-pink-500 text-white shadow-md"
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-pink-50"
-                    }`}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
-                )
-              )}
-            </div>
-
-            {/* Orders List */}
-            {orders.length > 0 ? (
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div
-                    key={order._id}
-                    className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-bold text-pink-700 font-mono">
-                            {order.orderNumber}
-                          </h3>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              order.status
-                            )}`}
-                          >
-                            {order.status.toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-gray-600">
-                          <strong>{order.customerInfo.name}</strong> • {order.customerInfo.phone}
-                        </p>
-                        <p className="text-sm text-gray-500">{order.customerInfo.address}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {moment(order.createdAt).tz("Asia/Karachi").format("YYYY-MM-DD hh:mm A")}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <p className="text-xl font-bold text-green-600">
-                          Rs. {order.totalAmount.toFixed(2)}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewOrder(order)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-                          >
-                            View
-                          </button>
-                          {order.status === "pending" && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order._id, "confirmed")}
-                              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
-                            >
-                              Confirm
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-8">No orders found</p>
-            )}
-
-            {/* Pagination */}
-            {totalOrderPages > 1 && (
-              <div className="flex justify-center gap-4 mt-6">
-                <button
-                  onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
-                  disabled={orderPage === 1}
-                  className="px-4 py-2 bg-white border border-pink-300 rounded-lg disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <span className="px-4 py-2">
-                  Page {orderPage} of {totalOrderPages}
-                </span>
-                <button
-                  onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
-                  disabled={orderPage === totalOrderPages}
-                  className="px-4 py-2 bg-white border border-pink-300 rounded-lg disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === "analytics" && (
-          <AnalyticsTab orders={orders} orderStats={orderStats} />
-        )}
-      </div>
-
-      {/* Modal Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 px-4">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8">
-            <h2 className="text-xl sm:text-2xl font-semibold mb-6 text-pink-600 text-center">
-              {editingId ? "✏️ Edit Product" : "🌸 Add New Product"}
-            </h2>
-
-            <form onSubmit={handleSubmit}>
-              {/* Name, Description, Price, Category, Image */}
-              <input
-                type="text"
-                name="name"
-                placeholder="Product Name"
-                value={form.name}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                required
-              />
-              <textarea
-                name="description"
-                placeholder="Description"
-                value={form.description}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                required
-              />
-              <input
-                type="number"
-                name="price"
-                placeholder="Price"
-                value={form.price}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                required
-              />
-              <input
-                list="categories"
-                name="category"
-                placeholder="Select or Add New Category"
-                value={form.category}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                required
-              />
-              <datalist id="categories">
-                <option value="Polaroids" />
-                <option value="Frames" />
-                <option value="Midnight Surprise" />
-                <option value="Acrylic Boxies" />
-                <option value="Eid Collection" />
-                <option value="Gift Boxes" />
-                <option value="Bouquets" />
-              </datalist>
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-              <input
-                type="file"
-                name="video"
-                accept="video/*"
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-
-              {/* Stock Fields */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="text-sm text-gray-500 block mb-1">Stock Quantity</label>
-                  <input
-                    type="number"
-                    name="stock"
-                    placeholder="Stock"
-                    value={form.stock}
-                    onChange={handleChange}
-                    className="border border-pink-300 rounded-lg w-full p-3"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500 block mb-1">Low Stock Alert</label>
-                  <input
-                    type="number"
-                    name="lowStockThreshold"
-                    placeholder="Alert at"
-                    value={form.lowStockThreshold}
-                    onChange={handleChange}
-                    className="border border-pink-300 rounded-lg w-full p-3"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              {/* Discount Fields */}
-              <input
-                type="number"
-                name="discountPercentage"
-                placeholder="Discount %"
-                value={form.discountPercentage}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-              <label className="text-sm text-gray-500">Discount Start</label>
-              <input
-                type="datetime-local"
-                name="discountStart"
-                value={form.discountStart}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-              <label className="text-sm text-gray-500">Discount End</label>
-              <input
-                type="datetime-local"
-                name="discountEnd"
-                value={form.discountEnd}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-
-              <div className="flex items-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  id="isFeatured"
-                  name="isFeatured"
-                  checked={form.isFeatured}
-                  onChange={handleChange}
-                  className="accent-pink-500 h-5 w-5"
-                />
-                <label htmlFor="isFeatured" className="text-gray-700 font-medium">
-                  Mark as Featured Product
-                </label>
-              </div>
-
-              <input
-                type="text"
-                name="promotionBadge"
-                placeholder="Promotion Badge (e.g. Bundle Deal)"
-                value={form.promotionBadge}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-
-              <input
-                type="text"
-                name="promoCode"
-                placeholder="Promo Code (optional)"
-                value={form.promoCode}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4 uppercase tracking-wider"
-              />
-
-              <textarea
-                name="promoDescription"
-                placeholder="Promotion description (shown with promo code)"
-                value={form.promoDescription}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                rows={3}
-              />
-
-              <label className="text-sm text-gray-500">Promo Expiry</label>
-              <input
-                type="datetime-local"
-                name="promoExpiresAt"
-                value={form.promoExpiresAt}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-              />
-
-              <textarea
-                name="bundleItemsInput"
-                placeholder="Bundle items (one per line)"
-                value={form.bundleItemsInput}
-                onChange={handleChange}
-                className="border border-pink-300 rounded-lg w-full p-3 mb-4"
-                rows={3}
-              />
-
-              {/* Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg"
-                >
-                  {loading
-                    ? editingId
-                      ? "Updating..."
-                      : "Adding..."
-                    : editingId
-                      ? "Update Product"
-                      : "Add Product"}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black px-6 py-3 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-
-            {message && (
-              <p
-                className={`mt-4 text-center font-medium ${message.includes("✅") || message.includes("🗑")
-                    ? "text-green-600"
-                    : "text-red-500"
-                  }`}
-              >
-                {message}
+      {/* Main Content */}
+      <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+        {/* Header */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+          <div className="px-8 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">
+                {navItems.find((i) => i.id === activeTab)?.label}
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                {activeTab === "dashboard" && "Overview of your store performance"}
+                {activeTab === "products" && `Manage ${data.length} products`}
+                {activeTab === "orders" && `${orderStats?.total || 0} total orders`}
+                {activeTab === "blog" && `${blogPosts.length} blog posts`}
+                {activeTab === "analytics" && "Detailed insights and reports"}
               </p>
-            )}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-slate-800">{moment().tz("Asia/Karachi").format("MMMM D, YYYY")}</p>
+                <p className="text-xs text-slate-500">{moment().tz("Asia/Karachi").format("h:mm A")}</p>
+              </div>
+            </div>
           </div>
+        </header>
+
+        {/* Content */}
+        <div className="p-8">
+          {/* Dashboard Tab */}
+          {activeTab === "dashboard" && (
+            <DashboardOverview
+              orderStats={orderStats}
+              products={data}
+              orders={orders}
+              onTabChange={setActiveTab}
+            />
+          )}
+
+          {/* Products Tab */}
+          {activeTab === "products" && (
+            <ProductsTab
+              products={filteredProducts}
+              search={productSearch}
+              setSearch={setProductSearch}
+              filter={productFilter}
+              setFilter={setProductFilter}
+              onAdd={() => {
+                setEditingId(null);
+                setForm(initialForm());
+                setIsModalOpen(true);
+              }}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
+
+          {/* Orders Tab */}
+          {activeTab === "orders" && (
+            <OrdersTab
+              orders={orders}
+              orderStats={orderStats}
+              statusFilter={orderStatusFilter}
+              setStatusFilter={setOrderStatusFilter}
+              onView={handleViewOrder}
+              onUpdateStatus={handleUpdateOrderStatus}
+              page={orderPage}
+              setPage={setOrderPage}
+              totalPages={totalOrderPages}
+              getStatusColor={getStatusColor}
+              getStatusIcon={getStatusIcon}
+            />
+          )}
+
+          {/* Blog Tab */}
+          {activeTab === "blog" && (
+            <BlogTab
+              posts={blogPosts}
+              loading={blogLoading}
+              onAdd={() => {
+                setBlogEditingId(null);
+                setBlogForm(initialBlogForm());
+                setIsBlogModalOpen(true);
+              }}
+              onEdit={handleBlogEdit}
+              onDelete={handleBlogDelete}
+            />
+          )}
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <AnalyticsTab orders={orders} orderStats={orderStats} />
+          )}
         </div>
-      )}
+      </main>
+
+      {/* Product Modal */}
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={resetForm}
+        form={form}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        loading={loading}
+        message={message}
+        isEditing={!!editingId}
+      />
 
       {/* Blog Modal */}
-      {isBlogModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 px-4">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
-            <h2 className="text-2xl font-semibold mb-6 text-pink-600 text-center">
-              {blogEditingId ? "✏️ Edit Blog Post" : "📝 New Blog Post"}
-            </h2>
-            <form onSubmit={handleBlogSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="title"
-                value={blogForm.title}
-                onChange={handleBlogChange}
-                placeholder="Title"
-                className="border border-pink-200 rounded-lg w-full p-3"
-                required
-              />
-              <textarea
-                name="summary"
-                value={blogForm.summary}
-                onChange={handleBlogChange}
-                placeholder="Short summary"
-                className="border border-pink-200 rounded-lg w-full p-3"
-                rows={3}
-              />
-              <textarea
-                name="content"
-                value={blogForm.content}
-                onChange={handleBlogChange}
-                placeholder="Story content (supports HTML)"
-                className="border border-pink-200 rounded-lg w-full p-3 font-mono text-sm"
-                rows={10}
-              />
-              <input
-                type="text"
-                name="coverImage"
-                value={blogForm.coverImage}
-                onChange={handleBlogChange}
-                placeholder="Cover image URL (optional)"
-                className="border border-pink-200 rounded-lg w-full p-3"
-              />
-              <div className="grid sm:grid-cols-2 gap-4">
-                <select
-                  name="status"
-                  value={blogForm.status}
-                  onChange={handleBlogChange}
-                  className="border border-pink-200 rounded-lg w-full p-3"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </select>
-                <input
-                  type="number"
-                  name="readingMinutes"
-                  value={blogForm.readingMinutes}
-                  onChange={handleBlogChange}
-                  min={1}
-                  className="border border-pink-200 rounded-lg w-full p-3"
-                  placeholder="Reading time (minutes)"
-                />
-              </div>
-              <textarea
-                name="tagsInput"
-                value={blogForm.tagsInput}
-                onChange={handleBlogChange}
-                placeholder="Tags (comma separated)"
-                className="border border-pink-200 rounded-lg w-full p-3"
-                rows={2}
-              />
-              <div className="grid sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="seoTitle"
-                  value={blogForm.seoTitle}
-                  onChange={handleBlogChange}
-                  placeholder="SEO Title (optional)"
-                  className="border border-pink-200 rounded-lg w-full p-3"
-                />
-                <input
-                  type="text"
-                  name="seoDescription"
-                  value={blogForm.seoDescription}
-                  onChange={handleBlogChange}
-                  placeholder="SEO Description (optional)"
-                  className="border border-pink-200 rounded-lg w-full p-3"
-                />
-              </div>
+      <BlogModal
+        isOpen={isBlogModalOpen}
+        onClose={resetBlogForm}
+        form={blogForm}
+        onChange={handleBlogChange}
+        onSubmit={handleBlogSubmit}
+        loading={blogLoading}
+        isEditing={!!blogEditingId}
+      />
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <button
-                  type="submit"
-                  disabled={blogLoading}
-                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg"
-                >
-                  {blogLoading
-                    ? blogEditingId
-                      ? "Updating..."
-                      : "Publishing..."
-                    : blogEditingId
-                    ? "Update Post"
-                    : "Publish Post"}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetBlogForm}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black px-6 py-3 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      {/* Order Modal */}
+      <OrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => {
+          setIsOrderModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onUpdateStatus={handleUpdateOrderStatus}
+        loading={orderLoading}
+        getStatusColor={getStatusColor}
+      />
+    </div>
+  );
+}
+
+// ==================== DASHBOARD OVERVIEW ====================
+function DashboardOverview({ orderStats, products, orders, onTabChange }) {
+  const recentOrders = orders.slice(0, 5);
+  const lowStockProducts = products.filter((p) => p.stockStatus === "low_stock").slice(0, 5);
+  const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
+
+  return (
+    <div className="space-y-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Revenue"
+          value={`Rs.${orderStats?.totalRevenue?.toFixed(0) || 0}`}
+          icon={DollarSign}
+          trend="+12.5%"
+          trendUp={true}
+          color="emerald"
+        />
+        <StatCard
+          title="Total Orders"
+          value={orderStats?.total || 0}
+          icon={ShoppingBag}
+          trend="+8.2%"
+          trendUp={true}
+          color="blue"
+        />
+        <StatCard
+          title="Products"
+          value={products.length}
+          icon={Package}
+          trend="New"
+          trendUp={true}
+          color="purple"
+        />
+        <StatCard
+          title="Pending Orders"
+          value={orderStats?.pending || 0}
+          icon={Clock}
+          trend="Needs attention"
+          trendUp={false}
+          color="amber"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Orders */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800">Recent Orders</h3>
+            <button
+              onClick={() => onTabChange("orders")}
+              className="text-sm text-pink-600 hover:text-pink-700 font-medium"
+            >
+              View All
+            </button>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <div key={order._id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">{order.orderNumber}</p>
+                      <p className="text-sm text-slate-500">{order.customerInfo.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      order.status === "delivered" ? "bg-emerald-100 text-emerald-700" :
+                      order.status === "pending" ? "bg-amber-100 text-amber-700" :
+                      "bg-blue-100 text-blue-700"
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center text-slate-500">No recent orders</div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Order Details Modal */}
-      {isOrderModalOpen && selectedOrder && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 px-4">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-pink-600">
-              Order Details: {selectedOrder.orderNumber}
-            </h2>
-
-            {/* Order Timeline */}
-            <div className="mb-4">
-              <OrderTimeline 
-                status={selectedOrder.status} 
-                updatedAt={selectedOrder.updatedAt}
-              />
-            </div>
-
-            {/* Customer Info */}
-            <div className="bg-pink-50 rounded-lg p-4 mb-4">
-              <h3 className="font-bold text-pink-700 mb-2">Customer Information</h3>
-              <p><strong>Name:</strong> {selectedOrder.customerInfo.name}</p>
-              <p><strong>Phone:</strong> {selectedOrder.customerInfo.phone}</p>
-              <p><strong>Address:</strong> {selectedOrder.customerInfo.address}</p>
-            </div>
-
-            {/* Category Summary */}
-            {selectedOrder.items.some(item => item.category) && (
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-4 border border-purple-100">
-                <h3 className="font-bold text-purple-700 mb-2">📂 Categories in this Order</h3>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(new Set(selectedOrder.items.map(item => item.category).filter(Boolean))).map((category, idx) => (
-                    <span 
-                      key={idx} 
-                      className="bg-white text-purple-700 px-3 py-1 rounded-full text-sm font-medium shadow-sm border border-purple-200"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Order Items */}
-            <div className="mb-4">
-              <h3 className="font-bold text-pink-700 mb-2">Order Items</h3>
-              <div className="space-y-2">
-                {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                      )}
-                      <div>
-                        <p className="font-semibold">{item.name}</p>
-                        {item.category && (
-                          <span className="inline-block bg-pink-100 text-pink-700 text-xs px-2 py-0.5 rounded-full mt-1">
-                            📁 {item.category}
-                          </span>
-                        )}
-                        <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity} × Rs.{item.price}</p>
-                      </div>
+        {/* Low Stock Alert */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              Low Stock Alert
+            </h3>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {lowStockProducts.length > 0 ? (
+              lowStockProducts.map((product) => (
+                <div key={product._id} className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={product.imageUrl || "https://via.placeholder.com/40"}
+                      alt={product.name}
+                      className="w-10 h-10 rounded-lg object-cover"
+                    />
+                    <div>
+                      <p className="font-medium text-slate-800 text-sm line-clamp-1">{product.name}</p>
+                      <p className="text-xs text-slate-500">{product.category}</p>
                     </div>
-                    <p className="font-bold">Rs. {(item.quantity * item.price).toFixed(2)}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Payment Info */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <h3 className="font-bold text-blue-700 mb-2">Payment Information</h3>
-              <p><strong>Method:</strong> {selectedOrder.paymentInfo.method.toUpperCase()}</p>
-              {selectedOrder.paymentInfo.screenshotUrl && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600 mb-1">Screenshot:</p>
-                  <a
-                    href={selectedOrder.paymentInfo.screenshotUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    View Screenshot
-                  </a>
+                  <span className="text-amber-600 font-semibold text-sm">{product.stock} left</span>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center text-slate-500">No low stock items</div>
+            )}
+          </div>
+        </div>
+      </div>
 
-            {/* Status Update */}
-            <div className="mb-4">
-              <h3 className="font-bold text-gray-700 mb-2">Update Status</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {["confirmed", "processing", "dispatched", "delivered", "cancelled"].map(
-                  (status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleUpdateOrderStatus(selectedOrder._id, status)}
-                      disabled={orderLoading || selectedOrder.status === status}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                        selectedOrder.status === status
-                          ? "bg-pink-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      } disabled:opacity-50`}
-                    >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Order Total */}
-            <div className="border-t pt-4 flex justify-between items-center">
-              <span className="text-lg font-bold">Total:</span>
-              <span className="text-2xl font-bold text-green-600">
-                Rs. {selectedOrder.totalAmount.toFixed(2)}
-              </span>
-            </div>
-
-            {/* Close Button */}
+      {/* Featured Products Preview */}
+      {featuredProducts.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-800">Featured Products</h3>
             <button
-              onClick={() => {
-                setIsOrderModalOpen(false);
-                setSelectedOrder(null);
-              }}
-              className="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-black px-6 py-3 rounded-lg font-semibold"
+              onClick={() => onTabChange("products")}
+              className="text-sm text-pink-600 hover:text-pink-700 font-medium"
             >
-              Close
+              Manage Products
             </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {featuredProducts.map((product) => (
+              <div key={product._id} className="group">
+                <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-3">
+                  <img
+                    src={product.imageUrl || "https://via.placeholder.com/200"}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                </div>
+                <p className="font-medium text-slate-800 text-sm line-clamp-1">{product.name}</p>
+                <p className="text-pink-600 font-semibold">Rs.{product.price}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1320,34 +806,507 @@ export default function AdminDashboard() {
   );
 }
 
+function StatCard({ title, value, icon: Icon, trend, trendUp, color }) {
+  const colorClasses = {
+    emerald: "bg-emerald-50 text-emerald-600",
+    blue: "bg-blue-50 text-blue-600",
+    purple: "bg-purple-50 text-purple-600",
+    amber: "bg-amber-50 text-amber-600",
+  };
 
-// Analytics Tab Component
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-slate-500 mb-1">{title}</p>
+          <p className="text-2xl font-bold text-slate-800">{value}</p>
+          <p className={`text-xs mt-2 font-medium ${trendUp ? "text-emerald-600" : "text-amber-600"}`}>
+            {trend}
+          </p>
+        </div>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== PRODUCTS TAB ====================
+function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, onEdit, onDelete }) {
+  const filters = [
+    { id: "all", label: "All Products" },
+    { id: "featured", label: "Featured" },
+    { id: "low-stock", label: "Low Stock" },
+    { id: "out-of-stock", label: "Out of Stock" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex gap-2">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  filter === f.id
+                    ? "bg-slate-800 text-white"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
+        >
+          <Plus className="w-5 h-5" />
+          Add Product
+        </button>
+      </div>
+
+      {/* Products Grid */}
+      {products.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard key={product._id} product={product} onEdit={onEdit} onDelete={onDelete} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500 text-lg">No products found</p>
+          <p className="text-slate-400 text-sm">Try adjusting your search or filters</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductCard({ product, onEdit, onDelete }) {
+  const finalPrice = product.finalPrice ?? product.price;
+  const avgRating = Number(product.averageRating || 0).toFixed(1);
+
+  const stockStatusConfig = {
+    in_stock: { color: "bg-emerald-500", label: `In Stock (${product.stock})`, bg: "bg-emerald-50 text-emerald-700" },
+    low_stock: { color: "bg-amber-500", label: `Low Stock (${product.stock})`, bg: "bg-amber-50 text-amber-700" },
+    out_of_stock: { color: "bg-red-500", label: "Out of Stock", bg: "bg-red-50 text-red-700" },
+  };
+  const stockConfig = stockStatusConfig[product.stockStatus] || stockStatusConfig.in_stock;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:shadow-lg transition-all duration-300">
+      {/* Image */}
+      <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+        {product.videoUrl ? (
+          <video
+            src={product.videoUrl}
+            className="w-full h-full object-cover"
+            controls
+            playsInline
+            preload="metadata"
+            poster={product.imageUrl || undefined}
+          />
+        ) : (
+          <img
+            src={product.imageUrl || "https://via.placeholder.com/300"}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        )}
+        
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {product.isFeatured && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-semibold rounded-lg shadow-lg">
+              <Star className="w-3 h-3" />
+              Featured
+            </span>
+          )}
+          {product.promotionBadge && (
+            <span className="inline-flex items-center px-2.5 py-1 bg-white/90 backdrop-blur text-slate-700 text-xs font-semibold rounded-lg">
+              <Tag className="w-3 h-3 mr-1" />
+              {product.promotionBadge}
+            </span>
+          )}
+        </div>
+
+        {/* Stock Badge */}
+        <div className="absolute top-3 right-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${stockConfig.bg}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${stockConfig.color} ${product.stockStatus === "low_stock" ? "animate-pulse" : ""}`} />
+            {stockConfig.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-semibold text-slate-800 line-clamp-1">{product.name}</h3>
+        </div>
+        
+        <p className="text-sm text-slate-500 line-clamp-2 mb-3">{product.description}</p>
+        
+        <p className="text-xs text-slate-400 mb-4">{product.category}</p>
+
+        {/* Price */}
+        <div className="flex items-baseline gap-2 mb-4">
+          {product.isDiscountActive && product.discountPercentage > 0 ? (
+            <>
+              <span className="text-xl font-bold text-slate-800">Rs.{finalPrice.toFixed(2)}</span>
+              <span className="text-sm text-slate-400 line-through">Rs.{product.price}</span>
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                {product.discountPercentage}% OFF
+              </span>
+            </>
+          ) : (
+            <span className="text-xl font-bold text-slate-800">Rs.{product.price}</span>
+          )}
+        </div>
+
+        {/* Rating & Sales */}
+        <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
+          <span className="flex items-center gap-1">
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+            {avgRating} ({product.ratingCount || 0})
+          </span>
+          {product.totalSold > 0 && (
+            <span className="text-emerald-600 font-medium">{product.totalSold} sold</span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(product)}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(product._id)}
+            className="flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== ORDERS TAB ====================
+function OrdersTab({
+  orders,
+  orderStats,
+  statusFilter,
+  setStatusFilter,
+  onView,
+  page,
+  setPage,
+  totalPages,
+  getStatusColor,
+  getStatusIcon,
+}) {
+  const statuses = ["all", "pending", "confirmed", "processing", "dispatched", "delivered", "cancelled"];
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      {orderStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <p className="text-sm text-slate-500 mb-1">Total Orders</p>
+            <p className="text-2xl font-bold text-slate-800">{orderStats.total}</p>
+          </div>
+          <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+            <p className="text-sm text-amber-600 mb-1">Pending</p>
+            <p className="text-2xl font-bold text-amber-700">{orderStats.pending}</p>
+          </div>
+          <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
+            <p className="text-sm text-emerald-600 mb-1">Delivered</p>
+            <p className="text-2xl font-bold text-emerald-700">{orderStats.delivered}</p>
+          </div>
+          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
+            <p className="text-sm text-blue-600 mb-1">Revenue</p>
+            <p className="text-2xl font-bold text-blue-700">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filter */}
+      <div className="flex flex-wrap gap-2">
+        {statuses.map((status) => (
+          <button
+            key={status}
+            onClick={() => {
+              setStatusFilter(status);
+              setPage(1);
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+              statusFilter === status
+                ? "bg-slate-800 text-white"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Order</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Customer</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Date</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Total</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {orders.length > 0 ? (
+                orders.map((order) => {
+                  const StatusIcon = getStatusIcon(order.status);
+                  return (
+                    <tr key={order._id} className="hover:bg-slate-50 transition">
+                      <td className="px-6 py-4">
+                        <span className="font-mono font-medium text-slate-800">{order.orderNumber}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-800">{order.customerInfo.name}</p>
+                          <p className="text-sm text-slate-500">{order.customerInfo.phone}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {moment(order.createdAt).tz("Asia/Karachi").format("MMM DD, YYYY")}
+                        <p className="text-xs text-slate-400">
+                          {moment(order.createdAt).tz("Asia/Karachi").format("h:mm A")}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                          <StatusIcon className="w-3.5 h-3.5" />
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => onView(order)}
+                            className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                    <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    No orders found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <span className="text-sm text-slate-600">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== BLOG TAB ====================
+function BlogTab({ posts, loading, onAdd, onEdit, onDelete }) {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200">
+            <span className="text-sm text-slate-500">Total Posts: </span>
+            <span className="font-semibold text-slate-800">{posts.length}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200">
+            <span className="text-sm text-slate-500">Published: </span>
+            <span className="font-semibold text-emerald-600">
+              {posts.filter((p) => p.status === "published").length}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition"
+        >
+          <Plus className="w-5 h-5" />
+          Create Post
+        </button>
+      </div>
+
+      {/* Blog Grid */}
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 bg-white rounded-2xl shadow animate-pulse" />
+          ))}
+        </div>
+      ) : posts.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {posts.map((post) => (
+            <div key={post._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition">
+              {post.coverImage && (
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    post.status === "published"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : "bg-amber-50 text-amber-700 border border-amber-200"
+                  }`}>
+                    {post.status.toUpperCase()}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    {moment(post.updatedAt).tz("Asia/Karachi").format("MMM DD, YYYY")}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-1">{post.title}</h3>
+                <p className="text-sm text-slate-500 line-clamp-2 mb-4">{post.summary}</p>
+                {post.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {post.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                        #{tag}
+                      </span>
+                    ))}
+                    {post.tags.length > 3 && (
+                      <span className="text-xs text-slate-400">+{post.tags.length - 3}</span>
+                    )}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onEdit(post)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(post._id)}
+                    className="flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500 text-lg">No blog posts yet</p>
+          <p className="text-slate-400 text-sm mb-4">Share your first story with your customers</p>
+          <button
+            onClick={onAdd}
+            className="px-6 py-2 bg-pink-500 text-white rounded-xl font-medium hover:bg-pink-600 transition"
+          >
+            Create First Post
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== ANALYTICS TAB ====================
 function AnalyticsTab({ orders, orderStats }) {
-  // Prepare data for charts
-  const statusData = orderStats ? [
-    { name: "Pending", value: orderStats.pending, color: "#eab308" },
-    { name: "Confirmed", value: orderStats.confirmed, color: "#3b82f6" },
-    { name: "Processing", value: orderStats.processing, color: "#a855f7" },
-    { name: "Dispatched", value: orderStats.dispatched, color: "#6366f1" },
-    { name: "Delivered", value: orderStats.delivered, color: "#22c55e" },
-    { name: "Cancelled", value: orderStats.cancelled, color: "#ef4444" },
-  ].filter(d => d.value > 0) : [];
+  const statusData = orderStats
+    ? [
+        { name: "Pending", value: orderStats.pending, color: "#f59e0b" },
+        { name: "Confirmed", value: orderStats.confirmed, color: "#3b82f6" },
+        { name: "Processing", value: orderStats.processing, color: "#a855f7" },
+        { name: "Dispatched", value: orderStats.dispatched, color: "#6366f1" },
+        { name: "Delivered", value: orderStats.delivered, color: "#10b981" },
+        { name: "Cancelled", value: orderStats.cancelled, color: "#ef4444" },
+      ].filter((d) => d.value > 0)
+    : [];
 
-  // Revenue by date (last 7 days)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
+    const date = moment().subtract(i, "days").format("YYYY-MM-DD");
     return {
-      date: moment(date).format('MMM DD'),
+      date: moment(date).format("MMM DD"),
       fullDate: date,
       revenue: 0,
       orders: 0,
     };
   }).reverse();
 
-  orders?.forEach(order => {
-    const orderDate = moment(order.createdAt).format('YYYY-MM-DD');
-    const dayData = last7Days.find(d => d.fullDate === orderDate);
-    if (dayData && order.status === 'delivered') {
+  orders?.forEach((order) => {
+    const orderDate = moment(order.createdAt).format("YYYY-MM-DD");
+    const dayData = last7Days.find((d) => d.fullDate === orderDate);
+    if (dayData && order.status === "delivered") {
       dayData.revenue += order.totalAmount;
     }
     if (dayData) {
@@ -1355,10 +1314,9 @@ function AnalyticsTab({ orders, orderStats }) {
     }
   });
 
-  // Top categories
   const categoryData = {};
-  orders?.forEach(order => {
-    order.items?.forEach(item => {
+  orders?.forEach((order) => {
+    order.items?.forEach((item) => {
       if (item.category) {
         categoryData[item.category] = (categoryData[item.category] || 0) + item.quantity;
       }
@@ -1373,25 +1331,25 @@ function AnalyticsTab({ orders, orderStats }) {
   const categoryColors = ["#ec4899", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b"];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Stats Cards */}
       {orderStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-4 text-white">
-            <p className="text-pink-100 text-sm">Total Revenue</p>
+          <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg shadow-pink-500/25">
+            <p className="text-pink-100 text-sm mb-1">Total Revenue</p>
             <p className="text-2xl font-bold">Rs.{orderStats.totalRevenue?.toFixed(0) || 0}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-md border border-pink-100">
-            <p className="text-gray-500 text-sm">Total Orders</p>
-            <p className="text-2xl font-bold text-pink-600">{orderStats.total}</p>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <p className="text-slate-500 text-sm mb-1">Total Orders</p>
+            <p className="text-2xl font-bold text-slate-800">{orderStats.total}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-md border border-green-100">
-            <p className="text-gray-500 text-sm">Delivered</p>
-            <p className="text-2xl font-bold text-green-600">{orderStats.delivered}</p>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <p className="text-slate-500 text-sm mb-1">Delivered</p>
+            <p className="text-2xl font-bold text-emerald-600">{orderStats.delivered}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-md border border-yellow-100">
-            <p className="text-gray-500 text-sm">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600">{orderStats.pending}</p>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <p className="text-slate-500 text-sm mb-1">Pending</p>
+            <p className="text-2xl font-bold text-amber-600">{orderStats.pending}</p>
           </div>
         </div>
       )}
@@ -1399,25 +1357,25 @@ function AnalyticsTab({ orders, orderStats }) {
       {/* Charts Grid */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Revenue Chart */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Revenue (Last 7 Days)</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Revenue (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={last7Days}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <Tooltip
                 formatter={(value) => [`Rs.${value}`, "Revenue"]}
-                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
               />
-              <Bar dataKey="revenue" fill="#ec4899" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#ec4899" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Order Status Distribution */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Order Status Distribution</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Order Status Distribution</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -1425,8 +1383,8 @@ function AnalyticsTab({ orders, orderStats }) {
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
+                outerRadius={90}
+                paddingAngle={4}
                 dataKey="value"
               >
                 {statusData.map((entry, index) => (
@@ -1440,39 +1398,566 @@ function AnalyticsTab({ orders, orderStats }) {
         </div>
 
         {/* Orders Trend */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Orders Trend (Last 7 Days)</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Orders Trend (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={last7Days}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
               />
-              <Line type="monotone" dataKey="orders" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: "#8b5cf6" }} />
+              <Line
+                type="monotone"
+                dataKey="orders"
+                stroke="#8b5cf6"
+                strokeWidth={3}
+                dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 4 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Top Categories */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Top Selling Categories</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Top Selling Categories</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={topCategories} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={100} />
-              <Tooltip 
-                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                tick={{ fontSize: 12, fill: "#64748b" }}
+                width={100}
+                axisLine={false}
+                tickLine={false}
               />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                 {topCategories.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={categoryColors[index % categoryColors.length]} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== MODALS ====================
+function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, message, isEditing }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <h2 className="text-xl font-semibold text-slate-800">
+            {isEditing ? "Edit Product" : "Add New Product"}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
+          <form id="product-form" onSubmit={onSubmit} className="space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Basic Information</h3>
+              <input
+                type="text"
+                name="name"
+                placeholder="Product Name"
+                value={form.name}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                required
+              />
+              <textarea
+                name="description"
+                placeholder="Description"
+                value={form.description}
+                onChange={onChange}
+                rows={3}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+                required
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Price"
+                  value={form.price}
+                  onChange={onChange}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  required
+                />
+                <input
+                  list="categories"
+                  name="category"
+                  placeholder="Category"
+                  value={form.category}
+                  onChange={onChange}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <datalist id="categories">
+                <option value="Polaroids" />
+                <option value="Frames" />
+                <option value="Midnight Surprise" />
+                <option value="Acrylic Boxies" />
+                <option value="Eid Collection" />
+                <option value="Gift Boxes" />
+                <option value="Bouquets" />
+              </datalist>
+            </div>
+
+            {/* Media */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Media</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-pink-300 transition">
+                  <ImageIcon className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    onChange={onChange}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100"
+                  />
+                </div>
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-pink-300 transition">
+                  <Video className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <input
+                    type="file"
+                    name="video"
+                    accept="video/*"
+                    onChange={onChange}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stock */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Inventory</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Stock Quantity</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    placeholder="0"
+                    value={form.stock}
+                    onChange={onChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Low Stock Alert</label>
+                  <input
+                    type="number"
+                    name="lowStockThreshold"
+                    placeholder="5"
+                    value={form.lowStockThreshold}
+                    onChange={onChange}
+                    min="1"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Discount */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Discount</h3>
+              <input
+                type="number"
+                name="discountPercentage"
+                placeholder="Discount %"
+                value={form.discountPercentage}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    name="discountStart"
+                    value={form.discountStart}
+                    onChange={onChange}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">End Date</label>
+                  <input
+                    type="datetime-local"
+                    name="discountEnd"
+                    value={form.discountEnd}
+                    onChange={onChange}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Promotion */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Promotion</h3>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  name="isFeatured"
+                  checked={form.isFeatured}
+                  onChange={onChange}
+                  className="w-5 h-5 text-pink-500 border-slate-300 rounded focus:ring-pink-500"
+                />
+                <label htmlFor="isFeatured" className="text-slate-700 font-medium">
+                  Featured Product
+                </label>
+              </div>
+              <input
+                type="text"
+                name="promotionBadge"
+                placeholder="Promotion Badge (e.g. Bundle Deal)"
+                value={form.promotionBadge}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              />
+              <input
+                type="text"
+                name="promoCode"
+                placeholder="Promo Code"
+                value={form.promoCode}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent uppercase"
+              />
+              <textarea
+                name="promoDescription"
+                placeholder="Promotion description"
+                value={form.promoDescription}
+                onChange={onChange}
+                rows={2}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+              />
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Promo Expiry</label>
+                <input
+                  type="datetime-local"
+                  name="promoExpiresAt"
+                  value={form.promoExpiresAt}
+                  onChange={onChange}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Bundle */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Bundle Items</h3>
+              <textarea
+                name="bundleItemsInput"
+                placeholder="Bundle items (one per line)"
+                value={form.bundleItemsInput}
+                onChange={onChange}
+                rows={3}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+              />
+            </div>
+          </form>
+
+          {message && (
+            <div className={`mt-4 p-4 rounded-xl ${message.includes("✅") ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+              {message}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 flex gap-3 bg-slate-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="product-form"
+            disabled={loading}
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                {isEditing ? "Updating..." : "Adding..."}
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {isEditing ? "Update Product" : "Add Product"}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlogModal({ isOpen, onClose, form, onChange, onSubmit, loading, isEditing }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <h2 className="text-xl font-semibold text-slate-800">
+            {isEditing ? "Edit Blog Post" : "Create Blog Post"}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-4">
+          <input
+            type="text"
+            name="title"
+            placeholder="Post Title"
+            value={form.title}
+            onChange={onChange}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            required
+          />
+          <textarea
+            name="summary"
+            placeholder="Short summary"
+            value={form.summary}
+            onChange={onChange}
+            rows={3}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+          />
+          <textarea
+            name="content"
+            placeholder="Story content (supports HTML)"
+            value={form.content}
+            onChange={onChange}
+            rows={8}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent font-mono text-sm resize-none"
+          />
+          <input
+            type="text"
+            name="coverImage"
+            placeholder="Cover image URL (optional)"
+            value={form.coverImage}
+            onChange={onChange}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <select
+              name="status"
+              value={form.status}
+              onChange={onChange}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
+            <input
+              type="number"
+              name="readingMinutes"
+              placeholder="Reading time (minutes)"
+              value={form.readingMinutes}
+              onChange={onChange}
+              min={1}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            />
+          </div>
+          <textarea
+            name="tagsInput"
+            placeholder="Tags (comma separated)"
+            value={form.tagsInput}
+            onChange={onChange}
+            rows={2}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="seoTitle"
+              placeholder="SEO Title (optional)"
+              value={form.seoTitle}
+              onChange={onChange}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            />
+            <input
+              type="text"
+              name="seoDescription"
+              placeholder="SEO Description (optional)"
+              value={form.seoDescription}
+              onChange={onChange}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {isEditing ? "Updating..." : "Publishing..."}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  {isEditing ? "Update Post" : "Publish Post"}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function OrderModal({ isOpen, onClose, order, onUpdateStatus, loading, getStatusColor }) {
+  if (!isOpen || !order) return null;
+
+  const statuses = ["confirmed", "processing", "dispatched", "delivered", "cancelled"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-800">Order Details</h2>
+            <p className="text-sm text-slate-500 font-mono">{order.orderNumber}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-6">
+          {/* Timeline */}
+          <OrderTimeline status={order.status} updatedAt={order.updatedAt} />
+
+          {/* Customer Info */}
+          <div className="bg-slate-50 rounded-xl p-4">
+            <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Customer Information
+            </h3>
+            <div className="space-y-1 text-sm">
+              <p><span className="text-slate-500">Name:</span> <span className="font-medium">{order.customerInfo.name}</span></p>
+              <p><span className="text-slate-500">Phone:</span> <span className="font-medium">{order.customerInfo.phone}</span></p>
+              <p><span className="text-slate-500">Address:</span> <span className="font-medium">{order.customerInfo.address}</span></p>
+              {order.customerInfo.email && (
+                <p><span className="text-slate-500">Email:</span> <span className="font-medium">{order.customerInfo.email}</span></p>
+              )}
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div>
+            <h3 className="font-semibold text-slate-800 mb-3">Order Items</h3>
+            <div className="space-y-3">
+              {order.items.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 bg-slate-50 rounded-xl p-3">
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-800">{item.name}</p>
+                    {item.category && (
+                      <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded">
+                        {item.category}
+                      </span>
+                    )}
+                    <p className="text-sm text-slate-500">Qty: {item.quantity} × Rs.{item.price}</p>
+                  </div>
+                  <p className="font-semibold text-slate-800">Rs.{(item.quantity * item.price).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div className="bg-blue-50 rounded-xl p-4">
+            <h3 className="font-semibold text-slate-800 mb-3">Payment Information</h3>
+            <p className="text-sm capitalize"><span className="text-slate-500">Method:</span> <span className="font-medium">{order.paymentInfo.method}</span></p>
+            {order.paymentInfo.screenshotUrl && (
+              <a
+                href={order.paymentInfo.screenshotUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-2 text-sm text-blue-600 hover:underline"
+              >
+                <ImageIcon className="w-4 h-4" />
+                View Payment Screenshot
+              </a>
+            )}
+          </div>
+
+          {/* Status Update */}
+          <div>
+            <h3 className="font-semibold text-slate-800 mb-3">Update Status</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {statuses.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => onUpdateStatus(order._id, status)}
+                  disabled={loading || order.status === status}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${
+                    order.status === status
+                      ? "bg-slate-800 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  } disabled:opacity-50 capitalize`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
+            <span className="text-lg font-semibold text-slate-800">Total Amount</span>
+            <span className="text-2xl font-bold text-emerald-600">Rs.{order.totalAmount.toFixed(2)}</span>
+          </div>
         </div>
       </div>
     </div>
