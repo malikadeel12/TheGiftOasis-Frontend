@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Breadcrumb from "./components/Breadcrumb";
@@ -15,7 +16,6 @@ import CheckoutPage from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
 import ProductDetails from "./pages/ProductDetails";
-
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Wishlist from "./pages/Wishlist";
@@ -87,6 +87,32 @@ function AppContent({ cartItems, wishlist, addToWishlist, removeFromWishlist, is
         </Routes>
       </main>
       {!isAdminPage && <Footer />}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#fff",
+            color: "#363636",
+            padding: "16px",
+            borderRadius: "12px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+            border: "1px solid #fce7f3",
+          },
+          success: {
+            iconTheme: {
+              primary: "#10b981",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
     </div>
   );
 }
