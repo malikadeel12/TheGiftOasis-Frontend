@@ -62,9 +62,9 @@ export default function MyOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 py-10 px-4">
-      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-xl p-6 md:p-10">
-        <h1 className="text-3xl font-bold text-pink-700 mb-6 flex items-center gap-3">
+    <div className="min-h-screen bg-pink-50 py-6 sm:py-10 px-3 sm:px-4 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-10">
+        <h1 className="text-2xl sm:text-3xl font-bold text-pink-700 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
           <span role="img" aria-label="box">
             📦
           </span>
@@ -72,18 +72,18 @@ export default function MyOrders() {
         </h1>
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl border border-red-200 bg-red-50 px-3 sm:px-4 py-2 sm:py-3 text-red-700 text-sm sm:text-base">
             {error}
           </div>
         )}
 
         {!error && orders.length === 0 && (
-          <div className="text-center bg-pink-100 text-pink-700 py-10 rounded-2xl">
-            <p className="text-xl font-semibold">No orders yet.</p>
-            <p className="mt-2">Start shopping to see your order history here!</p>
+          <div className="text-center bg-pink-100 text-pink-700 py-8 sm:py-10 rounded-2xl">
+            <p className="text-lg sm:text-xl font-semibold">No orders yet.</p>
+            <p className="mt-2 text-sm sm:text-base">Start shopping to see your order history here!</p>
             <button
               onClick={() => navigate("/shop")}
-              className="mt-4 inline-flex items-center gap-2 bg-pink-500 text-white px-5 py-2 rounded-full shadow hover:bg-pink-600 transition"
+              className="mt-4 inline-flex items-center gap-2 bg-pink-500 text-white px-4 sm:px-5 py-2 rounded-full shadow hover:bg-pink-600 transition text-sm sm:text-base"
             >
               🛍️ Shop Now
             </button>
@@ -91,30 +91,30 @@ export default function MyOrders() {
         )}
 
         {orders.length > 0 && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="border border-pink-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition"
+                className="border border-pink-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition"
               >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-pink-100 pb-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      Placed on {formatDate(order.createdAt)}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 border-b border-pink-100 pb-3 sm:pb-4 mb-3 sm:mb-4">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      {formatDate(order.createdAt)}
                     </p>
-                    <p className="text-xl font-semibold text-pink-700">
+                    <p className="text-base sm:text-xl font-semibold text-pink-700 truncate">
                       Order #{order.orderNumber || order._id.slice(-6)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-start md:items-end gap-2">
+                  <div className="flex flex-col items-start sm:items-end gap-1 sm:gap-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold ${
                         statusColors[order.status] || "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {order.status?.toUpperCase() || "PENDING"}
                     </span>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-base sm:text-lg font-bold text-green-600">
                       Rs.{Number(order.totalAmount || 0).toFixed(2)}
                     </p>
                   </div>
@@ -124,22 +124,22 @@ export default function MyOrders() {
                   {order.items?.map((item, idx) => (
                     <div
                       key={`${order._id}-${idx}`}
-                      className="flex items-center justify-between bg-pink-50 rounded-xl px-4 py-2"
+                      className="flex items-center justify-between bg-pink-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         {item.imageUrl && (
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="w-12 h-12 rounded-lg object-cover border border-pink-100"
+                            className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg object-cover border border-pink-100 flex-shrink-0"
                           />
                         )}
-                        <div>
-                          <p className="font-semibold text-gray-800">{item.name}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-800 text-sm sm:text-base truncate">{item.name}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">Qty: {item.quantity}</p>
                         </div>
                       </div>
-                      <div className="font-semibold text-pink-700">
+                      <div className="font-semibold text-pink-700 text-sm sm:text-base flex-shrink-0 ml-2">
                         Rs.{Number(item.price * item.quantity || 0).toFixed(2)}
                       </div>
                     </div>
@@ -147,9 +147,9 @@ export default function MyOrders() {
                 </div>
 
                 {order.notes && (
-                  <div className="mt-4 rounded-xl bg-yellow-50 border border-yellow-200 px-4 py-3 text-yellow-700">
-                    <p className="text-sm font-semibold uppercase tracking-wide">Admin Note</p>
-                    <p>{order.notes}</p>
+                  <div className="mt-3 sm:mt-4 rounded-lg sm:rounded-xl bg-yellow-50 border border-yellow-200 px-3 sm:px-4 py-2 sm:py-3 text-yellow-700">
+                    <p className="text-xs sm:text-sm font-semibold uppercase tracking-wide">Admin Note</p>
+                    <p className="text-sm">{order.notes}</p>
                   </div>
                 )}
               </div>
