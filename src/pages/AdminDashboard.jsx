@@ -4,6 +4,7 @@ import api, {
   getAllOrders,
   updateOrderStatus,
   getOrderStats,
+  deleteOrder,
 } from "../services/api";
 import moment from "moment-timezone";
 import toast from "react-hot-toast";
@@ -109,8 +110,6 @@ export default function AdminDashboard() {
       promoDescription: "",
       promoExpiresAt: "",
       bundleItemsInput: "",
-      stock: "",
-      lowStockThreshold: "5",
     };
   }
 
@@ -179,6 +178,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
+    try {
+      console.log("🗑️ Deleting order:", orderId);
+      const res = await deleteOrder(orderId);
+      console.log("✅ Delete response:", res);
+      toast.success("Order deleted successfully");
+      fetchOrders();
+      fetchOrderStats();
+      setIsOrderModalOpen(false);
+      setSelectedOrder(null);
+    } catch (err) {
+      console.error("❌ Delete error:", err);
+      toast.error(err.response?.data?.message || "Error deleting order");
+    }
+  };
+
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
     setIsOrderModalOpen(true);
@@ -232,11 +248,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      if (key === "stock" || key === "lowStockThreshold") {
-        formData.append(key, value === "" ? "0" : String(value));
-        return;
-      }
-
       if (value === "") return;
 
       formData.append(key, value);
@@ -282,8 +293,6 @@ export default function AdminDashboard() {
       bundleItemsInput: Array.isArray(product.bundleItems)
         ? product.bundleItems.join("\n")
         : "",
-      stock: product.stock || "",
-      lowStockThreshold: product.lowStockThreshold || "5",
     });
     setEditingId(product._id);
     setIsModalOpen(true);
@@ -328,9 +337,7 @@ export default function AdminDashboard() {
     const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
       product.category.toLowerCase().includes(productSearch.toLowerCase());
     const matchesFilter = productFilter === "all" || 
-      (productFilter === "featured" && product.isFeatured) ||
-      (productFilter === "low-stock" && product.stockStatus === "low_stock") ||
-      (productFilter === "out-of-stock" && product.stockStatus === "out_of_stock");
+      (productFilter === "featured" && product.isFeatured);
     return matchesSearch && matchesFilter;
   });
 
@@ -512,6 +519,7 @@ export default function AdminDashboard() {
               setStatusFilter={setOrderStatusFilter}
               onView={handleViewOrder}
               onUpdateStatus={handleUpdateOrderStatus}
+              onDelete={handleDeleteOrder}
               page={orderPage}
               setPage={setOrderPage}
               totalPages={totalOrderPages}
@@ -549,6 +557,7 @@ export default function AdminDashboard() {
         }}
         order={selectedOrder}
         onUpdateStatus={handleUpdateOrderStatus}
+        onDelete={handleDeleteOrder}
         loading={orderLoading}
         getStatusColor={getStatusColor}
       />
@@ -559,7 +568,6 @@ export default function AdminDashboard() {
 // ==================== DASHBOARD OVERVIEW ====================
 function DashboardOverview({ orderStats, products, orders, onTabChange }) {
   const recentOrders = orders.slice(0, 5);
-  const lowStockProducts = products.filter((p) => p.stockStatus === "low_stock").slice(0, 5);
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
 
   return (
@@ -643,38 +651,6 @@ function DashboardOverview({ orderStats, products, orders, onTabChange }) {
             )}
           </div>
         </div>
-
-        {/* Low Stock Alert */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
-              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              Low Stock Alert
-            </h3>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {lowStockProducts.length > 0 ? (
-              lowStockProducts.map((product) => (
-                <div key={product._id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={product.imageUrl || "https://via.placeholder.com/40"}
-                      alt={product.name}
-                      className="w-8 sm:w-10 h-8 sm:h-10 rounded-lg object-cover flex-shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-800 text-sm line-clamp-1">{product.name}</p>
-                      <p className="text-xs text-slate-500">{product.category}</p>
-                    </div>
-                  </div>
-                  <span className="text-amber-600 font-semibold text-sm flex-shrink-0">{product.stock} left</span>
-                </div>
-              ))
-            ) : (
-              <div className="px-6 py-8 text-center text-slate-500">No low stock items</div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Featured Products Preview */}
@@ -741,8 +717,6 @@ function ProductsTab({ products, search, setSearch, filter, setFilter, onAdd, on
   const filters = [
     { id: "all", label: "All Products" },
     { id: "featured", label: "Featured" },
-    { id: "low-stock", label: "Low Stock" },
-    { id: "out-of-stock", label: "Out of Stock" },
   ];
 
   return (
@@ -811,13 +785,6 @@ function ProductCard({ product, onEdit, onDelete }) {
   const finalPrice = product.finalPrice ?? product.price;
   const avgRating = Number(product.averageRating || 0).toFixed(1);
 
-  const stockStatusConfig = {
-    in_stock: { color: "bg-emerald-500", label: `In Stock (${product.stock})`, bg: "bg-emerald-50 text-emerald-700" },
-    low_stock: { color: "bg-amber-500", label: `Low Stock (${product.stock})`, bg: "bg-amber-50 text-amber-700" },
-    out_of_stock: { color: "bg-red-500", label: "Out of Stock", bg: "bg-red-50 text-red-700" },
-  };
-  const stockConfig = stockStatusConfig[product.stockStatus] || stockStatusConfig.in_stock;
-
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:shadow-lg transition-all duration-300 max-w-full">
       {/* Image */}
@@ -853,14 +820,6 @@ function ProductCard({ product, onEdit, onDelete }) {
               <span className="hidden sm:inline">{product.promotionBadge}</span>
             </span>
           )}
-        </div>
-
-        {/* Stock Badge */}
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-          <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium ${stockConfig.bg}`}>
-            <span className={`w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full ${stockConfig.color} ${product.stockStatus === "low_stock" ? "animate-pulse" : ""}`} />
-            <span className="hidden sm:inline">{stockConfig.label}</span>
-          </span>
         </div>
       </div>
 
@@ -928,6 +887,7 @@ function OrdersTab({
   statusFilter,
   setStatusFilter,
   onView,
+  onDelete,
   page,
   setPage,
   totalPages,
@@ -1025,12 +985,19 @@ function OrdersTab({
                         <span className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex justify-center">
+                        <div className="flex justify-center gap-2">
                           <button
                             onClick={() => onView(order)}
                             className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(order._id)}
+                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                            title="Delete Order"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -1077,12 +1044,21 @@ function OrdersTab({
                 
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-800">Rs.{order.totalAmount.toFixed(2)}</span>
-                  <button
-                    onClick={() => onView(order)}
-                    className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onView(order)}
+                      className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(order._id)}
+                      className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                      title="Delete Order"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1393,36 +1369,6 @@ function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, mess
             </div>
 
             {/* Stock */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Inventory</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-slate-600 mb-1">Stock Quantity</label>
-                  <input
-                    type="number"
-                    name="stock"
-                    placeholder="0"
-                    value={form.stock}
-                    onChange={onChange}
-                    min="0"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-600 mb-1">Low Stock Alert</label>
-                  <input
-                    type="number"
-                    name="lowStockThreshold"
-                    placeholder="5"
-                    value={form.lowStockThreshold}
-                    onChange={onChange}
-                    min="1"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Discount */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Discount</h3>
@@ -1564,10 +1510,16 @@ function ProductModal({ isOpen, onClose, form, onChange, onSubmit, loading, mess
   );
 }
 
-function OrderModal({ isOpen, onClose, order, onUpdateStatus, loading, getStatusColor }) {
+function OrderModal({ isOpen, onClose, order, onUpdateStatus, onDelete, loading, getStatusColor }) {
   if (!isOpen || !order) return null;
 
   const statuses = ["confirmed", "processing", "dispatched", "delivered", "cancelled"];
+
+  const handleDelete = () => {
+    if (window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
+      onDelete(order._id);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
@@ -1577,9 +1529,18 @@ function OrderModal({ isOpen, onClose, order, onUpdateStatus, loading, getStatus
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Order Details</h2>
             <p className="text-xs sm:text-sm text-slate-500 font-mono">{order.orderNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDelete}
+              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+              title="Delete Order"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition">
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
         </div>
 
         <div className="overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] p-4 sm:p-6 space-y-4 sm:space-y-6">

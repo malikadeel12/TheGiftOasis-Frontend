@@ -31,13 +31,13 @@ function AppContent({ cartItems, wishlist, addToWishlist, removeFromWishlist, is
       {!isAdminPage && <Breadcrumb />}
       <main className={`flex-grow ${isAdminPage ? 'p-0' : ''}`}>
         <Routes>
-          <Route path="/" element={<Home addToCart={addToCart} />} />
+          <Route path="/" element={<Home addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-          <Route path="/shop" element={<Shop addToCart={addToCart} />} />
+          <Route path="/shop" element={<Shop addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/products/:productId" element={<ProductDetails addToCart={addToCart} addToWishlist={addToWishlist} removeFromWishlist={removeFromWishlist} isInWishlist={isInWishlist} />} />
           <Route
             path="/cart"

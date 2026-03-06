@@ -47,6 +47,7 @@ export const getMyOrders = () => API.get("/orders/user/history");
 export const getAllOrders = (params) => API.get("/orders/admin/all", { params });
 export const updateOrderStatus = (id, status, notes) => API.put(`/orders/admin/update-status/${id}`, { status, notes });
 export const getOrderStats = () => API.get("/orders/admin/stats");
+export const deleteOrder = (id) => API.delete(`/orders/admin/delete/${id}`);
 
 // Product marketing & reviews
 export const getHighlights = () => API.get("/admin/highlights");
@@ -54,6 +55,9 @@ export const getProductById = (id) => API.get(`/admin/${id}`);
 export const getProductReviews = (id) => API.get(`/admin/${id}/reviews`);
 export const saveProductReview = (id, payload) => API.post(`/admin/${id}/reviews`, payload);
 export const deleteProductReview = (id, reviewId) => API.delete(`/admin/${id}/reviews/${reviewId}`);
+
+// Get all products (for categories)
+export const getAllProducts = (params) => API.get("/admin/products", { params });
 
 
 
